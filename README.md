@@ -1,2 +1,2 @@
 # spunc
- my first compiled language using the llvm kalidescope tutorial
+ my first compiled language using llvm
