@@ -1,64 +1,56 @@
 #include <stdio.h>
-#include <llvm-c/Core.h>
-#include <llvm-c/Analysis.h>
-#include <llvm-c/IRReader.h>
-#include <llvm-c/BitWriter.h>
+#include <stdlib.h>
+#include "lexer.h"
 
-int main() {
-    // Initialize LLVM
-    LLVMContextRef context = LLVMContextCreate();
-    LLVMModuleRef module = LLVMModuleCreateWithNameInContext("my_module", context);
-    LLVMBuilderRef builder = LLVMCreateBuilderInContext(context);
-    
-    // Set target triple for M1 Mac
-    LLVMSetTarget(module, "arm64-apple-macosx15.0.0");
-    
-    // Get reference to the printf function
-    LLVMTypeRef params[] = { LLVMPointerType(LLVMInt8TypeInContext(context), 0) };
-    LLVMTypeRef printfType = LLVMFunctionType(LLVMInt32TypeInContext(context), params, 1, 1);
-    LLVMValueRef printfFunc = LLVMAddFunction(module, "printf", printfType);
-    
-    // Create a function type for main (returns int)
-    LLVMTypeRef mainFuncType = LLVMFunctionType(LLVMInt32TypeInContext(context), NULL, 0, 0);
-    
-    // Create the main function
-    LLVMValueRef mainFunc = LLVMAddFunction(module, "main", mainFuncType);
-    
-    // Create a basic block
-    LLVMBasicBlockRef entry = LLVMAppendBasicBlockInContext(context, mainFunc, "entry");
-    LLVMPositionBuilderAtEnd(builder, entry);
-    
-    // Create a global string for the format
-    LLVMValueRef formatStr = LLVMBuildGlobalStringPtr(builder, "%d\n", "format");
-    
-    // Create arguments for printf (format string and the number 3)
-    LLVMValueRef args[2];
-    args[0] = formatStr;
-    args[1] = LLVMConstInt(LLVMInt32TypeInContext(context), 3, 0);
-    
-    // Call printf with the format string and the number 3
-    LLVMBuildCall2(builder, printfType, printfFunc, args, 2, "");
-    
-    // Return 0 from main
-    LLVMBuildRet(builder, LLVMConstInt(LLVMInt32TypeInContext(context), 0, 0));
-    
-    // Verify the module
-    char *error = NULL;
-    LLVMVerifyModule(module, LLVMAbortProcessAction, &error);
-    LLVMDisposeMessage(error);
-    
-    // Print the generated LLVM IR
-    LLVMDumpModule(module);
-    
-    // Write bitcode to a file
-    if (LLVMWriteBitcodeToFile(module, "output.bc") != 0) {
-        fprintf(stderr, "Error writing bitcode to file\n");
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        printf("Usage: %s <filename>\n", argv[0]);
+        return 1;
+    }
+
+    // Open the file
+    FILE *file = fopen(argv[1], "r");
+    if (!file) {
+        perror("Error opening file");
+        return 1;
+    }
+
+    // Get file size
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    rewind(file);
+
+    // Allocate buffer
+    char *buffer = (char *)malloc(file_size + 1);
+    if (!buffer) {
+        perror("Error allocating memory");
+        fclose(file);
+        return 1;
     }
     
-    // Clean up
-    LLVMDisposeBuilder(builder);
-    LLVMDisposeModule(module);
-    LLVMContextDispose(context);
-    
+    // read the file into the buffer
+    fread(buffer, 1, file_size, file);
+    buffer[file_size] = '\0'; // Null-terminate the string
+    fclose(file);
+
+    Lexer lexer = {
+        .start_tok = buffer, 
+        .cur_tok = buffer, 
+        .line_start = buffer,
+    };
+
+    // Call the lex function (to be implemented)
+    int result = lex(&lexer);
+
+    if (result == 0) {
+        printf("Lexing successful\n");
+    } else {
+        printf("Lexing failed\n");
+    }
+
+    // pass the lexer to the parser
+
+    // Free the buffer
+    free(buffer);
     return 0;
 }

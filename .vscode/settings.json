@@ -1,6 +1,14 @@
 {
     "files.associations": {
         "*.s": "arm",
-        "core.h": "c"
+        "core.h": "c",
+        "stdio.h": "c",
+        "cstdlib": "c",
+        "locale": "c",
+        "stddef.h": "c",
+        "__locale": "c",
+        "ostream": "c",
+        "print": "c",
+        "cstring": "c"
     }
 }
