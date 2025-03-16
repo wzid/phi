@@ -6,6 +6,7 @@
 #include <string.h>
 
 void add_token(Lexer *lexer, Token type, char *val);
+void handle_identifier(Lexer *lexer);
 
 int lex(Lexer *lexer) {
     while (*lexer->cur_tok != '\0') {
@@ -109,24 +110,13 @@ int lex(Lexer *lexer) {
 
                     add_token(lexer, tok_number, number);
 
-                    // we continue here because we are already at the next token
-                    // because of the while loop
+                    // we continue here because we are already at the next token 
+                    // which is the result of the while loop
                     continue;
                 } else if (isalpha(*lexer->cur_tok)) {
-                    char *str_start = lexer->cur_tok;
-
-                    // everything except the first character can be a number
-                    while (isalnum(*lexer->cur_tok)) lexer->cur_tok++;
-
-                    int str_len = lexer->cur_tok - str_start;
-                    char *identifier = (char *)malloc(str_len + 1);
-
-                    strncpy(identifier, str_start, str_len);
-                    identifier[str_len] = '\0';
-
-                    add_token(lexer, tok_identifier, identifier);
-                    // we don't continue here because we are already at the next token
-                    // because of the while loop
+                    handle_identifier(lexer);
+                    // we continue here because we are already at the next token 
+                    // which is the result of the while loop
                     continue;
                 } else {
                     fprintf(stderr, "Unknown token: %c\n", *lexer->cur_tok);
@@ -165,6 +155,29 @@ void add_token(Lexer *lexer, Token type, char *val) {
     lexer->token_count++;
 }
 
+void handle_identifier(Lexer *lexer) {
+    char *str_start = lexer->cur_tok;
+
+    // everything except the first character can be a number
+    while (isalnum(*lexer->cur_tok)) lexer->cur_tok++;
+
+    int str_len = lexer->cur_tok - str_start;
+    char *identifier = (char *)malloc(str_len + 1);
+
+    strncpy(identifier, str_start, str_len);
+    identifier[str_len] = '\0';
+
+    if (!strcmp(identifier, "func")) {
+        add_token(lexer, tok_func, identifier);
+    } else if (!strcmp(identifier, "int") || !strcmp(identifier, "string") || !strcmp(identifier, "bool")) {
+        add_token(lexer, tok_type, identifier);
+    } else if (!strcmp(identifier, "return")) {
+        add_token(lexer, tok_return, identifier);
+    } else {
+        add_token(lexer, tok_identifier, identifier);
+    }
+}
+
 // Free the memory allocated for the lexer
 void free_lexer(Lexer *lexer) {
     for (size_t i = 0; i < lexer->token_count; i++) {
@@ -174,4 +187,36 @@ void free_lexer(Lexer *lexer) {
         }
     }
     free(lexer->tokens);
+}
+
+char *token_to_string(Token token) {
+    switch (token) {
+        case tok_eof: return "TOK_EOF";
+        case tok_lparen: return "TOK_LPAREN";
+        case tok_rparen: return "TOK_RPAREN";
+        case tok_lbrace: return "TOK_LBRACE";
+        case tok_rbrace: return "TOK_RBRACE";
+        case tok_comma: return "TOK_COMMA";
+        case tok_plus: return "TOK_PLUS";
+        case tok_minus: return "TOK_MINUS";
+        case tok_star: return "TOK_STAR";
+        case tok_slash: return "TOK_SLASH";
+        case tok_equal: return "TOK_EQUAL";
+        case tok_lessthan: return "TOK_LESSTHAN";
+        case tok_greaterthan: return "TOK_GREATERTHAN";
+        case tok_period: return "TOK_PERIOD";
+        case tok_semicolon: return "TOK_SEMICOLON";
+        case tok_and: return "TOK_AND";
+        case tok_or: return "TOK_OR";
+        case tok_not: return "TOK_NOT";
+        case tok_xor: return "TOK_XOR";
+        case tok_mod: return "TOK_MOD";
+        case tok_func: return "TOK_FUNC";
+        case tok_return: return "TOK_RETURN";
+        case tok_type: return "TOK_TYPE";
+        case tok_string: return "TOK_STRING";
+        case tok_identifier: return "TOK_IDENTIFIER";
+        case tok_number: return "TOK_NUMBER";
+        default: return "TOK_UNKNOWN";
+    }
 }

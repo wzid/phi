@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LEXER_H
+#define LEXER_H
 
 #include <stddef.h>
 
@@ -23,6 +24,9 @@ typedef enum token {
     tok_not,
     tok_xor,
     tok_mod,
+    tok_func,
+    tok_return,
+    tok_type,
     tok_string,
     tok_identifier,
     tok_number
@@ -52,3 +56,7 @@ typedef struct lexer {
 int lex(Lexer *lexer);
 
 void free_lexer(Lexer *lexer);
+
+char *token_to_string(Token token);
+
+#endif
