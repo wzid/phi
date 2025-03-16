@@ -1,115 +1,152 @@
 #include "lexer.h"
-#include <string.h>
+
 #include <ctype.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 void add_token(Lexer *lexer, Token type, char *val);
 
 int lex(Lexer *lexer) {
-    switch (*lexer->cur_tok) {
-        case ' ':
-            // do nothing
-            break;
-        case '\n':
-            lexer->line_number++;
-            lexer->line_start = lexer->cur_tok + 1;
-            break;
-        case '\0':
-            add_token(lexer, tok_eof, NULL);
-            return 0;
-        case '(':
-            add_token(lexer, tok_lparen, "(");
-            break;
-        case ')':
-            add_token(lexer, tok_rparen, ")");
-            break;
-        case ',':
-            add_token(lexer, tok_comma, ",");
-            break;
-        case '+':
-            add_token(lexer, tok_plus, "+");
-            break;
-        case '-':
-            add_token(lexer, tok_minus, "-");
-            break;
-        case '*':
-            add_token(lexer, tok_star, "*");
-            break;
-        case '/':
-            add_token(lexer, tok_slash, "/");
-            break;
-        case '=':
-            add_token(lexer, tok_equal, "=");
-            break;
-        case '<':
-            add_token(lexer, tok_lessthan, "<");
-            break;
-        case '>':
-            add_token(lexer, tok_greaterthan, ">");
-            break;
-        case '.':
-            add_token(lexer, tok_period, ".");
-            break;
-        case ';':
-            add_token(lexer, tok_semicolon, ";");
-            break;
-        case '&':
-            add_token(lexer, tok_and, "&");
-            break;
-        case '|':
-            add_token(lexer, tok_or, "|");
-            break;
-        case '!':
-            add_token(lexer, tok_not, "!");
-            break;
-        case '^':
-            add_token(lexer, tok_xor, "^");
-            break;
-        case '%':
-            add_token(lexer, tok_mod, "%");
-            break;
-        default:
-            // If the token is a number
-            if (isdigit(*lexer->cur_tok)) {
-                char *str_start = lexer->cur_tok;
-
-                while (isdigit(*lexer->cur_tok)) 
+    while (*lexer->cur_tok != '\0') {
+        // printf("Current token: %c\n", *lexer->cur_tok);
+        switch (*lexer->cur_tok) {
+            case ' ':
+                // do nothing
+                break;
+            case '\n':
+                lexer->line_number++;
+                lexer->line_start = lexer->cur_tok + 1;
+                break;
+            case '(':
+                add_token(lexer, tok_lparen, "(");
+                break;
+            case ')':
+                add_token(lexer, tok_rparen, ")");
+                break;
+            case '{':
+                add_token(lexer, tok_lbrace, "{");
+                break;
+            case '}':
+                add_token(lexer, tok_rbrace, "}");
+                break;
+            case ',':
+                add_token(lexer, tok_comma, ",");
+                break;
+            case '+':
+                add_token(lexer, tok_plus, "+");
+                break;
+            case '-':
+                add_token(lexer, tok_minus, "-");
+                break;
+            case '*':
+                add_token(lexer, tok_star, "*");
+                break;
+            case '/':
+                if (*(lexer->cur_tok + 1) == '/') {
+                    // skip the comment
+                    while (*lexer->cur_tok != '\n') lexer->cur_tok++;
+                    continue;
+                } else {
+                    add_token(lexer, tok_slash, "/");
+                }
+                break;
+            case '=':
+                add_token(lexer, tok_equal, "=");
+                break;
+            case '<':
+                add_token(lexer, tok_lessthan, "<");
+                break;
+            case '>':
+                add_token(lexer, tok_greaterthan, ">");
+                break;
+            case '.':
+                add_token(lexer, tok_period, ".");
+                break;
+            case ';':
+                add_token(lexer, tok_semicolon, ";");
+                break;
+            case '&':
+                add_token(lexer, tok_and, "&");
+                break;
+            case '|':
+                add_token(lexer, tok_or, "|");
+                break;
+            case '!':
+                add_token(lexer, tok_not, "!");
+                break;
+            case '^':
+                add_token(lexer, tok_xor, "^");
+                break;
+            case '%':
+                add_token(lexer, tok_mod, "%");
+                break;
+            default:
+                if (*lexer->cur_tok == '"') {
                     lexer->cur_tok++;
-                
-                int str_len = lexer->cur_tok - str_start;
-                char *number = (char *)malloc(str_len + 1);
+                    char *str_start = lexer->cur_tok;
 
-                strncpy(number, str_start, str_len);
-                number[str_len] = '\0';
+                    while (*lexer->cur_tok != '"') lexer->cur_tok++;
 
-                add_token(lexer, tok_number, number);
-            } else if (isalpha(*lexer->cur_tok)) {
-                char *str_start = lexer->cur_tok;
+                    int str_len = lexer->cur_tok - str_start;
+                    char *string = (char *)malloc(str_len + 1);
 
-                // everything except the first character can be a number
-                while (isalnum(*lexer->cur_tok))
-                    lexer->cur_tok++;
-                
-                int str_len = lexer->cur_tok - str_start;
-                char *identifier = (char *)malloc(str_len + 1);
+                    strncpy(string, str_start, str_len);
+                    string[str_len] = '\0';
 
-                strncpy(identifier, str_start, str_len);
-                identifier[str_len] = '\0';
+                    add_token(lexer, tok_string, string);
+                    // we don't continue here so we can skip the closing quote
+                } else if (isdigit(*lexer->cur_tok)) {  // If the token is a number
+                    char *str_start = lexer->cur_tok;
 
-                add_token(lexer, tok_identifier, identifier);
-            } else {
-                fprintf(stderr, "Unknown token: %c\n", *lexer->cur_tok);
-                return 1;
-            }
-            break;
+                    while (isdigit(*lexer->cur_tok)) lexer->cur_tok++;
+
+                    int str_len = lexer->cur_tok - str_start;
+                    char *number = (char *)malloc(str_len + 1);
+
+                    strncpy(number, str_start, str_len);
+                    number[str_len] = '\0';
+
+                    add_token(lexer, tok_number, number);
+
+                    // we continue here because we are already at the next token
+                    // because of the while loop
+                    continue;
+                } else if (isalpha(*lexer->cur_tok)) {
+                    char *str_start = lexer->cur_tok;
+
+                    // everything except the first character can be a number
+                    while (isalnum(*lexer->cur_tok)) lexer->cur_tok++;
+
+                    int str_len = lexer->cur_tok - str_start;
+                    char *identifier = (char *)malloc(str_len + 1);
+
+                    strncpy(identifier, str_start, str_len);
+                    identifier[str_len] = '\0';
+
+                    add_token(lexer, tok_identifier, identifier);
+                    // we don't continue here because we are already at the next token
+                    // because of the while loop
+                    continue;
+                } else {
+                    fprintf(stderr, "Unknown token: %c\n", *lexer->cur_tok);
+                    return 1;
+                }
+                break;
+        }
+
+        // advance token
+        lexer->cur_tok++;
     }
+
+    add_token(lexer, tok_eof, NULL);
+    return 0;
 }
 
 void add_token(Lexer *lexer, Token type, char *val) {
     if (lexer->token_count == lexer->capacity) {
         size_t new_capacity = lexer->capacity == 0 ? 8 : lexer->capacity * 2;
-        lexer->tokens = (TokenData *)realloc(lexer->tokens, lexer->capacity * sizeof(TokenData));
+        lexer->tokens = (TokenData *)realloc(lexer->tokens, new_capacity * sizeof(TokenData));
         if (!lexer->tokens) {
             perror("Error reallocating memory");
             exit(1);
@@ -120,22 +157,21 @@ void add_token(Lexer *lexer, Token type, char *val) {
 
     lexer->tokens[lexer->token_count].type = type;
     lexer->tokens[lexer->token_count].val = val;
-    // i dont like this code
+
+    // setting the location
     lexer->tokens[lexer->token_count].loc.line = lexer->line_number;
     lexer->tokens[lexer->token_count].loc.col = lexer->cur_tok - lexer->line_start;
+
     lexer->token_count++;
 }
 
 // Free the memory allocated for the lexer
 void free_lexer(Lexer *lexer) {
     for (size_t i = 0; i < lexer->token_count; i++) {
-        free(lexer->tokens[i].val);
+        if (lexer->tokens[i].type == tok_identifier || lexer->tokens[i].type == tok_string ||
+            lexer->tokens[i].type == tok_number) {
+            free(lexer->tokens[i].val);
+        }
     }
     free(lexer->tokens);
-    lexer->tokens = NULL;
-    lexer->token_count = 0;
-    lexer->line_number = 0;
-    lexer->capacity = 0;
-    free(lexer->start_tok);
-    lexer->cur_tok = NULL;
 }

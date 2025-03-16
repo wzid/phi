@@ -48,9 +48,22 @@ int main(int argc, char *argv[]) {
         printf("Lexing failed\n");
     }
 
-    // pass the lexer to the parser
+    // print lexer tokens to file
+    FILE *out_file = fopen("tokens.txt", "w");
+    if (!out_file) {
+        perror("Error opening file");
+        return 1;
+    }
 
+    for (size_t i = 0; i < lexer.token_count; i++) {
+        TokenData token = lexer.tokens[i];
+        fprintf(out_file, "Token: %d, Value: %s, Line: %zu, Column: %zu\n", token.type, token.val, token.loc.line, token.loc.col);
+    }
+
+    fclose(out_file);
+    
     // Free the buffer
     free(buffer);
+    free_lexer(&lexer);
     return 0;
 }
