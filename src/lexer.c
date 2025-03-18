@@ -65,7 +65,7 @@ int lex(Lexer *lexer) {
                 add_token(lexer, tok_period, ".");
                 break;
             case ';':
-                add_token(lexer, tok_semicolon, ";");
+                add_token(lexer, tok_semi, ";");
                 break;
             case '&':
                 add_token(lexer, tok_and, "&");
@@ -182,7 +182,8 @@ void handle_identifier(Lexer *lexer) {
 void free_lexer(Lexer *lexer) {
     for (size_t i = 0; i < lexer->token_count; i++) {
         if (lexer->tokens[i].type == tok_identifier || lexer->tokens[i].type == tok_string ||
-            lexer->tokens[i].type == tok_number) {
+            lexer->tokens[i].type == tok_number || lexer->tokens[i].type == tok_type || 
+            lexer->tokens[i].type == tok_return || lexer->tokens[i].type == tok_func) {
             free(lexer->tokens[i].val);
         }
     }
@@ -205,7 +206,7 @@ char *token_to_string(Token token) {
         case tok_lessthan: return "TOK_LESSTHAN";
         case tok_greaterthan: return "TOK_GREATERTHAN";
         case tok_period: return "TOK_PERIOD";
-        case tok_semicolon: return "TOK_SEMICOLON";
+        case tok_semi: return "TOK_SEMI";
         case tok_and: return "TOK_AND";
         case tok_or: return "TOK_OR";
         case tok_not: return "TOK_NOT";

@@ -18,7 +18,7 @@ typedef enum token {
     tok_lessthan,
     tok_greaterthan,
     tok_period,
-    tok_semicolon,
+    tok_semi,
     tok_and,
     tok_or,
     tok_not,
