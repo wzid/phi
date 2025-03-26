@@ -85,6 +85,11 @@ struct stmt {
     };
 };
 
+typedef struct {
+    Stmt **statements;
+    int stmt_count;
+} Program;
+
 
 // Expressions
 Expr *binary_expr(Expr *left, TokenData op, Expr *right);
