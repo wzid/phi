@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-typedef enum token {
+typedef enum {
     tok_eof,
     tok_lparen,
     tok_rparen,
@@ -32,18 +32,18 @@ typedef enum token {
     tok_number
 } Token;
 
-typedef struct location {
+typedef struct {
     size_t line;
     size_t col;
 } Location;
 
-typedef struct token_data {
+typedef struct {
     Token type; // The type of the token
     char *val; // The value of the token
     Location loc; // The location of the token
 } TokenData;
 
-typedef struct lexer {
+typedef struct {
     char *start_tok;
     char *cur_tok;
     TokenData *tokens;
