@@ -53,7 +53,6 @@ struct expr {
 
 
 //  Statements
-
 typedef enum {
     STMT_VAR_DECL,
     STMT_FUNC_DECL,
@@ -63,17 +62,39 @@ typedef enum {
     STMT_BLOCK,
 } StmtKind;
 
+// typedef struct {
+//     TokenData tok_identifier;
+//     Expr *value;
+// } VarDeclStmt;
+
 typedef struct {
-    TokenData tok_identifier;
-    
-} VarDeclStmt;
+    Expr *value;
+} ReturnStmt;
+
+typedef struct {
+    Stmt **statements; // pointer to an array of statement pointers
+    int stmt_count;
+} BlockStmt;
 
 struct stmt {
     StmtKind type;
     union {
-        
+        // VarDeclStmt var_decl;
+        ReturnStmt return_stmt;
+        BlockStmt block_stmt;
     };
 };
+
+
+// Expressions
+Expr *binary_expr(Expr *left, TokenData op, Expr *right);
+Expr *unary_expr(TokenData op, Expr *right);
+Expr *int_literal(int value);
+Expr *string_literal(char *value);
+Expr *bool_literal(int value);
+
+Stmt *return_stmt(Expr *value);
+Stmt *block_stmt(Stmt **statements, int stmt_count);
 
 
 #endif
