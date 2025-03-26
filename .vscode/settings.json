@@ -9,6 +9,7 @@
         "__locale": "c",
         "ostream": "c",
         "print": "c",
-        "cstring": "c"
+        "cstring": "c",
+        "ast.h": "c"
     }
 }
