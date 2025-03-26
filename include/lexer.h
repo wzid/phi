@@ -47,10 +47,10 @@ typedef struct {
     char *start_tok;
     char *cur_tok;
     TokenData *tokens;
-    size_t line_number;
-    char *line_start;
     size_t token_count;
     size_t capacity;
+    size_t line_number;
+    char *line_start;
 } Lexer;
 
 int lex(Lexer *lexer);

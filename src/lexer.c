@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-void add_token(Lexer *lexer, Token type, char *val);
-void handle_identifier(Lexer *lexer);
+static void add_token(Lexer *lexer, Token type, char *val);
+static void handle_identifier(Lexer *lexer);
 
 int lex(Lexer *lexer) {
     while (*lexer->cur_tok != '\0') {
@@ -133,7 +133,7 @@ int lex(Lexer *lexer) {
     return 0;
 }
 
-void add_token(Lexer *lexer, Token type, char *val) {
+static void add_token(Lexer *lexer, Token type, char *val) {
     if (lexer->token_count == lexer->capacity) {
         size_t new_capacity = lexer->capacity == 0 ? 8 : lexer->capacity * 2;
         lexer->tokens = (TokenData *)realloc(lexer->tokens, new_capacity * sizeof(TokenData));
@@ -155,7 +155,7 @@ void add_token(Lexer *lexer, Token type, char *val) {
     lexer->token_count++;
 }
 
-void handle_identifier(Lexer *lexer) {
+static void handle_identifier(Lexer *lexer) {
     char *str_start = lexer->cur_tok;
 
     // everything except the first character can be a number
