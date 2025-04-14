@@ -29,7 +29,7 @@ typedef struct {
 } UnaryExpr;
 
 typedef struct {
-    int value;
+    char *value;
 } IntLiteral;
 
 typedef struct {

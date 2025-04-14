@@ -24,7 +24,7 @@ Expr *unary_expr(TokenData op, Expr *right) {
     return expr;
 }
 
-Expr *int_literal(int value) {
+Expr *int_literal(char *value) {
     Expr *expr = (Expr *) malloc(sizeof(Expr));
 
     expr->type = EXPR_LITERAL_INT;
