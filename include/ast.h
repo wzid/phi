@@ -94,7 +94,7 @@ typedef struct {
 // Expressions
 Expr *binary_expr(Expr *left, TokenData op, Expr *right);
 Expr *unary_expr(TokenData op, Expr *right);
-Expr *int_literal(int value);
+Expr *int_literal(char *value);
 Expr *string_literal(char *value);
 Expr *bool_literal(int value);
 
