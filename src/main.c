@@ -49,17 +49,6 @@ int main(int argc, char *argv[]) {
         printf("Lexing failed\n");
     }
 
-    for (size_t i = 0; i < lexer.token_count; i++) {
-        TokenData token = lexer.tokens[i];
-        
-        if (token.type == tok_identifier || token.type == tok_string || token.type == tok_number) {
-            printf("%s(%s) ", token_to_string(token.type), token.val);
-        } else {
-            printf("%s ", token_to_string(token.type));
-        }
-    }
-    printf("\n");
-
     init_parser(&lexer);
 
     // Program *prog = parse(&parser);
