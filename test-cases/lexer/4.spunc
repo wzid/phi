@@ -1,0 +1,4 @@
+// Here is a comment
+func testComment() {
+    int x = 5;
+}// Here is a comment
