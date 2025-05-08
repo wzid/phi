@@ -4,13 +4,13 @@
 
 static void consume(Parser *parser);
 static Token peek(Parser *parser);
-static void expect(Parser *parser, Token check, Token expected);
+// static void expect(Parser *parser, Token check, Token expected);
 static void add_statement(Program *prog, Stmt *stmt);
 
 static Stmt *parse_return(Parser *parser);
 static Expr *parse_expression(Parser *parser);
 static Expr *parse_prefix(Parser *parser);
-static Expr *parse_infix(Parser *parser, Expr *left);
+// static Expr *parse_infix(Parser *parser, Expr *left);
 
 Parser init_parser(Lexer *lexer) {
     Parser parser = {
@@ -55,6 +55,8 @@ Program *parse(Parser *parser) {
         // prog->statements[prog->stmt_count++] = stmt;
         consume(parser);
     }
+    // TEMPORARY!!
+    return NULL;
 }
 
 static void consume(Parser *parser) {
@@ -66,13 +68,13 @@ static Token peek(Parser *parser) {
     return parser->next_tok;
 }
 
-static void expect(Parser *parser, Token check, Token expected) {
-    if (check != expected) {
-        fprintf(stderr, "Expected %s, got %s\n", token_to_string(expected), token_to_string(check));
-        exit(1);
-    }
-    consume(parser);
-}
+// static void expect(Parser *parser, Token check, Token expected) {
+//     if (check != expected) {
+//         fprintf(stderr, "Expected %s, got %s\n", token_to_string(expected), token_to_string(check));
+//         exit(1);
+//     }
+//     consume(parser);
+// }
 
 static void add_statement(Program *prog, Stmt *stmt) {
     if (prog->stmt_count == 0) {
@@ -96,7 +98,7 @@ static Stmt *parse_return(Parser *parser) {
 }
 
 static Expr *parse_expression(Parser *parser) {
-    Expr *expr = (Expr *) malloc(sizeof(Expr));
+    // Expr *expr = (Expr *) malloc(sizeof(Expr));
 
     Expr *left = parse_prefix(parser);
 
@@ -105,6 +107,8 @@ static Expr *parse_expression(Parser *parser) {
     }
     
     // TODO: parse infix
+    // TEMPORARY
+    return NULL;
 }
 
 static Expr *parse_prefix(Parser *parser) {

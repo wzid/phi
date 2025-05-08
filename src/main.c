@@ -60,9 +60,9 @@ int main(int argc, char *argv[]) {
     }
     printf("\n");
 
-    Parser parser = init_parser(&lexer);
+    init_parser(&lexer);
 
-    Program *prog = parse(&parser);
+    // Program *prog = parse(&parser);
 
 
     
