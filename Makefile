@@ -22,19 +22,29 @@ bin/test-%: $(CORE_OBJS) obj/%-main.o | bin
 	clang $^ -o $@ $(shell llvm-config --ldflags --libs core)
 	@echo "✓ built $(@F)"
 
-.PHONY: all tests test-% clean
 all: bin/mycompiler
 
-tests: $(TEST_BINS)
+test-all: $(TEST_BINS)
 
-test-%: | bin/test-%         # alias: 'make test-lexer'
+test-%: bin/test-%         # alias: 'make test-lexer'
 	@echo "✓ $< is built"
-	
+	@echo "Running tests..."
+	./test.sh lexer
 
-clean:
+# loop through all test folders and remove .out files
+clean-tests:
+	@echo "Cleaning test files"
+	@for dir in $(TEST_NAMES); do \
+		rm -f test-cases/$${dir}/*.out test-cases/$${dir}/*.diff; \
+	done
+
+clean: clean-tests
 	rm -rf obj bin
 
 # --- automatic directory creation ------------------------------------------
 bin obj:
 	@echo "Creating directory $@"
 	mkdir -p $@
+
+.PHONY: all test-all test-% clean
+.PRECIOUS: obj/%.o
