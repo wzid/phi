@@ -67,7 +67,7 @@ for file_name in ${file_names[@]}; do
     fi
     
     # Insert diff command here
-    if ! diff --strip-trailing-cr -u $DIR/$file_name.out $DIR/$file_name.ans > $DIR/$file_name.diff; then
+    if ! diff -w -u $DIR/$file_name.out $DIR/$file_name.ans > $DIR/$file_name.diff; then
         failed_file_names+=($file_name)
     else
         rm $DIR/$file_name.diff # remove diff if its empty
