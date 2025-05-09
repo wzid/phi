@@ -46,7 +46,7 @@ int lex(Lexer *lexer) {
             case '/':
                 if (*(lexer->cur_tok + 1) == '/') {
                     // skip the comment
-                    while (*lexer->cur_tok != '\n') lexer->cur_tok++;
+                    while (*lexer->cur_tok != '\n' && *lexer->cur_tok != '\0') lexer->cur_tok++;
                     continue;
                 } else {
                     add_token(lexer, tok_slash, "/");
