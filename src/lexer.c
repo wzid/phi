@@ -45,7 +45,7 @@ int lex(Lexer *lexer) {
                 break;
             case '/':
                 if (*(lexer->cur_tok + 1) == '/') {
-                    // skip the comment
+                    // skip the comment (and don't go out of bounds)
                     while (*lexer->cur_tok != '\n' && *lexer->cur_tok != '\0') lexer->cur_tok++;
                     continue;
                 } else {
@@ -87,7 +87,14 @@ int lex(Lexer *lexer) {
                     lexer->cur_tok++;
                     char *str_start = lexer->cur_tok;
 
-                    while (*lexer->cur_tok != '"') lexer->cur_tok++;
+                    while (*lexer->cur_tok != '"' && *lexer->cur_tok != '\0') lexer->cur_tok++;
+                    
+                    // Inform user of missing string closing
+                    if (*lexer->cur_tok == '\0') {
+                        fprintf(stderr, "%zu: Missing string closing\n", lexer->line_number);
+                        return 1;
+                    }
+                    
 
                     int str_len = lexer->cur_tok - str_start;
                     char *string = (char *)malloc(str_len + 1);
