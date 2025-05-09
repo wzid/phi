@@ -18,9 +18,9 @@ DIR=./test-cases/$type
 # Generate output for each testcase and multithread it
 pids=()
 file_names=()
-for file in ./test-cases/$type/*.spunc; do
+for file in ./test-cases/$type/*.phi; do
     
-    file_name=$(basename $file .spunc)
+    file_name=$(basename $file .phi)
     $COMPILER $file > $DIR/$file_name.out 2>&1 &
 
     pids+=($!)
@@ -49,7 +49,7 @@ if [ ${#error_file_names[@]} -ne 0 ]; then
 
     echo -e "${BLUE}${#error_file_names[@]}${RESET} test cases resulted in an ${RED}error${RESET}:"
     for file_name in "${error_file_names[@]}"; do
-        echo -e "\t- $file_name.spunc"
+        echo -e "\t- $file_name.phi"
     done
     echo
     echo -e "${BOLD}${ITALIC}Review error logs in each files respective .out file${RESET}"
@@ -80,7 +80,7 @@ if [ ${#failed_file_names[@]} -ne 0 ]; then
     echo -e "${RED}${#failed_file_names[@]}${RESET} test case(s) did not produce a correct result:"
 
     for file_name in ${failed_file_names[@]}; do
-        echo -e "\t- ${file_name}.spunc"
+        echo -e "\t- ${file_name}.phi"
     done
 
     echo
