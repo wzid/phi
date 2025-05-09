@@ -21,7 +21,7 @@ file_names=()
 for file in ./test-cases/$type/*.spunc; do
     
     file_name=$(basename $file .spunc)
-    $COMPILER $file > $DIR/$file_name.out &
+    $COMPILER $file > $DIR/$file_name.out 2>&1 &
 
     pids+=($!)
     file_names+=($file_name)
@@ -49,7 +49,7 @@ if [ ${#error_file_names[@]} -ne 0 ]; then
 
     echo -e "${BLUE}${#error_file_names[@]}${RESET} test cases resulted in an ${RED}error${RESET}:"
     for file_name in "${error_file_names[@]}"; do
-        echo -e "\t- $file_name.in"
+        echo -e "\t- $file_name.spunc"
     done
     echo
     echo -e "${BOLD}${ITALIC}Review error logs in each files respective .out file${RESET}"
