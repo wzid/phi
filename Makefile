@@ -29,7 +29,7 @@ test-all: $(TEST_BINS)
 test-%: bin/test-%         # alias: 'make test-lexer'
 	@echo "✓ $< is built"
 	@echo "Running tests..."
-	./test.sh lexer
+	./test.sh $*
 
 # loop through all test folders and remove .out files
 clean-tests:
