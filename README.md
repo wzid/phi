@@ -3,6 +3,8 @@ A compiler written in C using LLVM
 
 The name is inspired from [Euler's totient function](https://en.wikipedia.org/wiki/Euler%27s_totient_function) which is also called Euler's phi function.
 
+Watch my devlogs on YouTube [here](https://www.youtube.com/watch?v=QPHYcFLAWoo&list=PLEgtx_e7NiZeAXGu8U04pLPKDU5zTNG4M&index=3)!
+
 
 ## syntax
 ```
