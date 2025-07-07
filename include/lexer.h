@@ -15,6 +15,8 @@ typedef enum {
     tok_star,
     tok_slash,
     tok_equal,
+    tok_equality,
+    tok_inequality,
     tok_lessthan,
     tok_greaterthan,
     tok_period,

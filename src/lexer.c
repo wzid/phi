@@ -7,10 +7,10 @@
 
 static void add_token(Lexer *lexer, Token type, char *val);
 static void handle_identifier(Lexer *lexer);
+static char next_char(Lexer *lexer);
 
 int lex(Lexer *lexer) {
     while (*lexer->cur_tok != '\0') {
-        // printf("Current token: %c\n", *lexer->cur_tok);
         switch (*lexer->cur_tok) {
             case ' ':
                 // do nothing
@@ -44,7 +44,7 @@ int lex(Lexer *lexer) {
                 add_token(lexer, tok_star, "*");
                 break;
             case '/':
-                if (*(lexer->cur_tok + 1) == '/') {
+                if (next_char(lexer) == '/') {
                     // skip the comment (and don't go out of bounds)
                     while (*lexer->cur_tok != '\n' && *lexer->cur_tok != '\0') lexer->cur_tok++;
                     continue;
@@ -53,7 +53,12 @@ int lex(Lexer *lexer) {
                 }
                 break;
             case '=':
-                add_token(lexer, tok_equal, "=");
+                if (next_char(lexer) == '=') {
+                    lexer->cur_tok++; // skip the next '='
+                    add_token(lexer, tok_equality, "==");
+                } else {
+                    add_token(lexer, tok_equal, "=");
+                }
                 break;
             case '<':
                 add_token(lexer, tok_lessthan, "<");
@@ -74,7 +79,13 @@ int lex(Lexer *lexer) {
                 add_token(lexer, tok_or, "|");
                 break;
             case '!':
-                add_token(lexer, tok_not, "!");
+                if (next_char(lexer) == '=') {
+                    lexer->cur_tok++; // skip the next '='
+                    add_token(lexer, tok_inequality, "!=");
+                } else {
+                    // If it's just '!', we treat it as a logical NOT
+                    add_token(lexer, tok_not, "!");
+                }
                 break;
             case '^':
                 add_token(lexer, tok_xor, "^");
@@ -185,6 +196,13 @@ static void handle_identifier(Lexer *lexer) {
     }
 }
 
+static char next_char(Lexer *lexer) {
+    if (*(lexer->cur_tok + 1) == '\0') {
+        return '\0'; // end of string
+    }
+    return *(lexer->cur_tok + 1);
+}
+
 // Free the memory allocated for the lexer
 void free_lexer(Lexer *lexer) {
     for (size_t i = 0; i < lexer->token_count; i++) {
@@ -210,6 +228,8 @@ char *token_to_string(Token token) {
         case tok_star: return "TOK_STAR";
         case tok_slash: return "TOK_SLASH";
         case tok_equal: return "TOK_EQUAL";
+        case tok_equality: return "TOK_EQUALITY";
+        case tok_inequality: return "TOK_INEQUALITY";
         case tok_lessthan: return "TOK_LESSTHAN";
         case tok_greaterthan: return "TOK_GREATERTHAN";
         case tok_period: return "TOK_PERIOD";
