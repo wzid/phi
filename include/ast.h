@@ -69,6 +69,10 @@ typedef enum {
 
 typedef struct {
     Expr *value;
+} ExprStmt;
+
+typedef struct {
+    Expr *value;
 } ReturnStmt;
 
 typedef struct {
@@ -80,6 +84,7 @@ struct stmt {
     StmtKind type;
     union {
         // VarDeclStmt var_decl;
+        ExprStmt expression_stmt;
         ReturnStmt return_stmt;
         BlockStmt block_stmt;
     };
@@ -100,6 +105,8 @@ Expr *bool_literal(int value);
 
 Stmt *return_stmt(Expr *value);
 Stmt *block_stmt(Stmt **statements, int stmt_count);
+char *expr_to_string(Expr *expr);
+char *stmt_to_string(Stmt *stmt);
 
 
 #endif

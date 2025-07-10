@@ -10,6 +10,8 @@
         "ostream": "c",
         "print": "c",
         "cstring": "c",
-        "ast.h": "c"
+        "ast.h": "c",
+        "parser.h": "c",
+        "string.h": "c"
     }
 }

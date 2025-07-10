@@ -1,0 +1,1 @@
+ExprStmt(BinaryExpr(IntLiteral(1) + IntLiteral(1)))

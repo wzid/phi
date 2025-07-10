@@ -1,39 +1,43 @@
 #include "parser.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-static void consume(Parser *parser);
-static Token peek(Parser *parser);
+static void consume(Parser *this);
+static Token peek(Parser *this);
+static TokenData curr_token_data(Parser *this);
+static TokenData next_token_data(Parser *this);
+
 // static void expect(Parser *parser, Token check, Token expected);
 static void add_statement(Program *prog, Stmt *stmt);
 
-static Stmt *parse_return(Parser *parser);
-static Expr *parse_expression(Parser *parser);
-static Expr *parse_prefix(Parser *parser);
-// static Expr *parse_infix(Parser *parser, Expr *left);
+static Stmt *parse_return(Parser *this);
+static Stmt *parse_expression_stmt(Parser *this);
+static Expr *parse_expression(Parser *this, Precedence precedence);
+static Expr *parse_prefix(Parser *this);
+static Expr *parse_infix(Parser *this, Expr *left);
+static Expr *parse_binary_expr(Parser *this, Expr *left, TokenData op_token);
+
+static Precedence get_precedence(Token token);
 
 Parser init_parser(Lexer *lexer) {
     Parser parser = {
         .lexer = lexer,
-        .next_tok_index = 0,
+        .cur_tok = lexer->tokens[0].type,
+        .next_tok = lexer->tokens[1].type,
+        .next_tok_index = 1,
     };
-    
-    // Read 2 tokens so that cur_tok and next_tok are correctly set
-    consume(&parser);
-    consume(&parser);
-    
+
     return parser;
 }
 
-Program *parse(Parser *parser) {
-    // Stmt **stmts = (Stmt **) malloc(sizeof(Stmt *));
-    Program *prog = (Program *) malloc(sizeof(Program));
-    // prog->statements = (Stmt **) malloc(sizeof(Stmt *));
+Program *parse(Parser *this) {
+    Program *prog = (Program *)malloc(sizeof(Program));
     prog->stmt_count = 0;
 
-    while (parser->cur_tok != tok_eof) {
+    while (this->cur_tok != tok_eof) {
         Stmt *stmt = NULL;
-        switch (parser->cur_tok) {
+        switch (this->cur_tok) {
             case tok_func:
                 // parse function declaration
                 break;
@@ -42,96 +46,164 @@ Program *parse(Parser *parser) {
                 break;
             case tok_return:
                 // parse return statement
-                stmt = parse_return(parser);
-                break;
-            case tok_identifier:
-                // parse expression
+                stmt = parse_return(this);
                 break;
             default:
-                fprintf(stderr, "Unknown token: %s\n", token_to_string(parser->cur_tok));
-                return NULL;
+                stmt = parse_expression_stmt(this);
+                break;
         }
         add_statement(prog, stmt);
-        // prog->statements[prog->stmt_count++] = stmt;
-        consume(parser);
+        consume(this);
     }
-    // TEMPORARY!!
-    return NULL;
+
+    return prog;
 }
 
-static void consume(Parser *parser) {
-    parser->cur_tok = parser->next_tok;
-    parser->next_tok = parser->lexer->tokens[parser->next_tok_index++].type;
+static void consume(Parser *this) {
+    this->cur_tok = this->next_tok;
+    this->next_tok = this->lexer->tokens[++this->next_tok_index].type;
 }
 
-static Token peek(Parser *parser) {
-    return parser->next_tok;
+static Token peek(Parser *this) { return this->next_tok; }
+
+static TokenData curr_token_data(Parser *this) {
+    return this->lexer->tokens[this->next_tok_index - 1];
 }
 
-// static void expect(Parser *parser, Token check, Token expected) {
-//     if (check != expected) {
-//         fprintf(stderr, "Expected %s, got %s\n", token_to_string(expected), token_to_string(check));
-//         exit(1);
-//     }
-//     consume(parser);
-// }
+static TokenData next_token_data(Parser *this) {
+    return this->lexer->tokens[this->next_tok_index];
+}
 
 static void add_statement(Program *prog, Stmt *stmt) {
     if (prog->stmt_count == 0) {
-        prog->statements = (Stmt **) malloc(sizeof(Stmt *));
+        prog->statements = (Stmt **)malloc(sizeof(Stmt *));
     } else {
         // this seems inefficient
-        prog->statements = (Stmt **) realloc(prog->statements, (prog->stmt_count + 1) * sizeof(Stmt *));
+        prog->statements = (Stmt **)realloc(prog->statements, (prog->stmt_count + 1) * sizeof(Stmt *));
     }
     prog->statements[prog->stmt_count++] = stmt;
 }
 
-static Stmt *parse_return(Parser *parser) {
+static Stmt *parse_expression_stmt(Parser *this) {
+    // parse expression
+    Expr *expr = parse_expression(this, LOWEST);
+
+    if (peek(this) == tok_semi) {
+        consume(this); // consume the semicolon
+    }
+
+    // create expression statement
+    Stmt *stmt = (Stmt *)malloc(sizeof(Stmt));
+    stmt->type = STMT_EXPR;
+    stmt->expression_stmt.value = expr;
+
+    return stmt;
+}
+
+
+static Stmt *parse_return(Parser *this) {
     // advance past return keyword
-    consume(parser);
+    consume(this);
 
     // parse expression
-    Expr *value = parse_expression(parser);
+    Expr *value = parse_expression(this, LOWEST);
 
     // create return statement
     return return_stmt(value);
 }
 
-static Expr *parse_expression(Parser *parser) {
+static Expr *parse_expression(Parser *this, Precedence precedence) {
+
     // Expr *expr = (Expr *) malloc(sizeof(Expr));
+    // TODO: handle errors
+    Expr *left = parse_prefix(this);
 
-    Expr *left = parse_prefix(parser);
-
-    if (peek(parser) == tok_semi) {
-        return left;
+    while (peek(this) != tok_semi && precedence < get_precedence(this->next_tok)) {
+        left = parse_infix(this, left);
     }
-    
-    // TODO: parse infix
-    // TEMPORARY
-    return NULL;
+
+    return left;
 }
 
-static Expr *parse_prefix(Parser *parser) {
-    switch (parser->cur_tok) {
+static Expr *parse_prefix(Parser *this) {
+    switch (this->cur_tok) {
         case tok_number:
-            return int_literal(parser->lexer->tokens[parser->next_tok_index - 1].val);
+            return int_literal(curr_token_data(this).val);
         // case tok_string:
         //     return string_literal(parser->lexer->tokens[parser->next_tok_index - 1].str_val);
         // case tok_bool:
         //     return bool_literal(parser->lexer->tokens[parser->next_tok_index - 1].bool_val);
         // case tok_identifier:
         //     return NULL;
-        // case tok_lparen:
-        //     consume(parser);
-        //     Expr *expr = parse_expression(parser);
-        //     expect(parser, parser->cur_tok, tok_rparen);
-        //     return expr;
+        case tok_lparen:
+            consume(this);
+            Expr *expr = parse_expression(this, LOWEST);
+            if (peek(this) != tok_rparen) {
+                fprintf(stderr, "Expected closing parenthesis, got %s\n", token_to_string(peek(this)));
+                exit(1);
+            }
+            consume(this); // consume the closing parenthesis
+            return expr;
         // case tok_minus:
         //     consume(parser);
         //     return unary_expr(parser->cur_tok, parse_expression(parser));
         default:
-            fprintf(stderr, "Unknown token: %s\n", token_to_string(parser->cur_tok));
+            fprintf(stderr, "Unknown token: %s\n", token_to_string(this->cur_tok));
             exit(1);
     }
 }
 
+static Expr *parse_infix(Parser *this, Expr *left) {
+    // We need to make sure that the next token is an operator
+    // which is why we switch off of this->next_tok
+    switch (this->next_tok) {
+        case tok_plus:
+        case tok_minus:
+        case tok_star:
+        case tok_slash:
+        case tok_mod:
+        case tok_lessthan:
+        case tok_greaterthan:
+        case tok_equality:
+        case tok_inequality: {
+            TokenData op_token = next_token_data(this);
+            // move past operator token completely
+            consume(this);
+            consume(this);
+            return parse_binary_expr(this, left, op_token);
+        }
+        default:
+            return NULL;
+    }
+}
+
+static Expr *parse_binary_expr(Parser *this, Expr *left, TokenData op_token) {
+    Precedence curr_precedence = get_precedence(op_token.type);
+    
+    Expr *right = parse_expression(this, curr_precedence);
+    return binary_expr(left, op_token, right);
+}
+
+Precedence get_precedence(Token token) {
+    switch (token) {
+        case tok_equality:
+        case tok_inequality:
+            return EQUALITY;
+        case tok_lessthan:
+        case tok_greaterthan:
+            return LESS_GREATER;
+        case tok_plus:
+        case tok_minus:
+            return ADD_SUBRACT;
+        case tok_star:
+        case tok_slash:
+        case tok_mod:
+            return TIMES_DIVIDE_MOD;
+        case tok_not:  // Maybe remove this?
+            return PREFIX;
+        case tok_lparen:  // Function call
+            return CALL;
+        default:
+            return LOWEST;
+    }
+}
