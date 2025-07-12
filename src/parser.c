@@ -8,7 +8,7 @@ static Token peek(Parser *this);
 static TokenData curr_token_data(Parser *this);
 static TokenData next_token_data(Parser *this);
 
-// static void expect(Parser *parser, Token check, Token expected);
+static void expect_next(Parser *this, Token expected);
 static void add_statement(Program *prog, Stmt *stmt);
 
 static Stmt *parse_return(Parser *this);
@@ -66,12 +66,17 @@ static void consume(Parser *this) {
 
 static Token peek(Parser *this) { return this->next_tok; }
 
-static TokenData curr_token_data(Parser *this) {
-    return this->lexer->tokens[this->next_tok_index - 1];
-}
+static TokenData curr_token_data(Parser *this) { return this->lexer->tokens[this->next_tok_index - 1]; }
 
-static TokenData next_token_data(Parser *this) {
-    return this->lexer->tokens[this->next_tok_index];
+static TokenData next_token_data(Parser *this) { return this->lexer->tokens[this->next_tok_index]; }
+
+static void expect_next(Parser *this, Token expected) {
+    if (peek(this) != expected) {
+        Location loc = next_token_data(this).loc;
+        fprintf(stderr, "(%zu:%zu) Expected %s, got %s\n", loc.line, loc.col, token_to_string(expected),
+                token_to_string(peek(this)));
+        exit(1);
+    }
 }
 
 static void add_statement(Program *prog, Stmt *stmt) {
@@ -89,7 +94,7 @@ static Stmt *parse_expression_stmt(Parser *this) {
     Expr *expr = parse_expression(this, LOWEST);
 
     if (peek(this) == tok_semi) {
-        consume(this); // consume the semicolon
+        consume(this);  // consume the semicolon
     }
 
     // create expression statement
@@ -99,7 +104,6 @@ static Stmt *parse_expression_stmt(Parser *this) {
 
     return stmt;
 }
-
 
 static Stmt *parse_return(Parser *this) {
     // advance past return keyword
@@ -113,8 +117,6 @@ static Stmt *parse_return(Parser *this) {
 }
 
 static Expr *parse_expression(Parser *this, Precedence precedence) {
-
-    // Expr *expr = (Expr *) malloc(sizeof(Expr));
     // TODO: handle errors
     Expr *left = parse_prefix(this);
 
@@ -129,6 +131,11 @@ static Expr *parse_prefix(Parser *this) {
     switch (this->cur_tok) {
         case tok_number:
             return int_literal(curr_token_data(this).val);
+        case tok_not: {
+            TokenData op = curr_token_data(this);
+            consume(this);  // consume the '!' token
+            return unary_expr(op, parse_expression(this, PREFIX));
+        }
         // case tok_string:
         //     return string_literal(parser->lexer->tokens[parser->next_tok_index - 1].str_val);
         // case tok_bool:
@@ -138,17 +145,14 @@ static Expr *parse_prefix(Parser *this) {
         case tok_lparen:
             consume(this);
             Expr *expr = parse_expression(this, LOWEST);
-            if (peek(this) != tok_rparen) {
-                fprintf(stderr, "Expected closing parenthesis, got %s\n", token_to_string(peek(this)));
-                exit(1);
-            }
-            consume(this); // consume the closing parenthesis
+            expect_next(this, tok_rparen);  // error out if we don't have a closing parenthesis
+            consume(this);                  // consume the closing parenthesis
             return expr;
         // case tok_minus:
         //     consume(parser);
         //     return unary_expr(parser->cur_tok, parse_expression(parser));
         default:
-            fprintf(stderr, "Unknown token: %s\n", token_to_string(this->cur_tok));
+            fprintf(stderr, "Unknown prefix token: %s\n", token_to_string(this->cur_tok));
             exit(1);
     }
 }
@@ -179,7 +183,7 @@ static Expr *parse_infix(Parser *this, Expr *left) {
 
 static Expr *parse_binary_expr(Parser *this, Expr *left, TokenData op_token) {
     Precedence curr_precedence = get_precedence(op_token.type);
-    
+
     Expr *right = parse_expression(this, curr_precedence);
     return binary_expr(left, op_token, right);
 }
