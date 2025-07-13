@@ -143,6 +143,11 @@ static Expr *parse_prefix(Parser *this) {
     switch (this->cur_tok) {
         case tok_number:
             return int_literal(curr_token_data(this).val);
+        case tok_minus: {
+            TokenData op = curr_token_data(this);
+            consume(this);  // consume the '-' token
+            return unary_expr(op, parse_expression(this, PREFIX));
+        }
         case tok_not: {
             TokenData op = curr_token_data(this);
             consume(this);  // consume the '!' token
