@@ -13,6 +13,10 @@
         "ast.h": "c",
         "parser.h": "c",
         "string.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "executionengine.h": "c",
+        "codegen.h": "c",
+        "analysis.h": "c",
+        "target.h": "c"
     }
 }
