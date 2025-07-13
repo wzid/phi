@@ -93,6 +93,7 @@ struct stmt {
 typedef struct {
     Stmt **statements;
     int stmt_count;
+    int capacity;
 } Program;
 
 
@@ -105,6 +106,9 @@ Expr *bool_literal(int value);
 
 Stmt *return_stmt(Expr *value);
 Stmt *block_stmt(Stmt **statements, int stmt_count);
+
+void free_program(Program *prog);
+
 char *expr_to_string(Expr *expr);
 char *stmt_to_string(Stmt *stmt);
 

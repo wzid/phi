@@ -12,6 +12,7 @@
         "cstring": "c",
         "ast.h": "c",
         "parser.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "stdlib.h": "c"
     }
 }

@@ -49,7 +49,7 @@ typedef struct {
     char *start_tok;
     char *cur_tok;
     TokenData *tokens;
-    size_t token_count;
+    int token_count;
     size_t capacity;
     size_t line_number;
     char *line_start;

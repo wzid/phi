@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "memory.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,8 +33,10 @@ Parser init_parser(Lexer *lexer) {
 }
 
 Program *parse(Parser *this) {
-    Program *prog = (Program *)malloc(sizeof(Program));
+    Program *prog = (Program *)s_malloc(sizeof(Program));
     prog->stmt_count = 0;
+    prog->capacity = 8; // Start with reasonable initial capacity
+    prog->statements = (Stmt **)s_malloc(prog->capacity * sizeof(Stmt *));
 
     while (this->cur_tok != tok_eof) {
         Stmt *stmt = NULL;
@@ -53,13 +56,16 @@ Program *parse(Parser *this) {
                 break;
         }
         add_statement(prog, stmt);
-        consume(this);
     }
 
     return prog;
 }
 
 static void consume(Parser *this) {
+    if (this->next_tok_index + 1 > this->lexer->token_count) {
+        fprintf(stderr, "Unexpected end of input\n");
+        exit(1);
+    }
     this->cur_tok = this->next_tok;
     this->next_tok = this->lexer->tokens[++this->next_tok_index].type;
 }
@@ -80,12 +86,14 @@ static void expect_next(Parser *this, Token expected) {
 }
 
 static void add_statement(Program *prog, Stmt *stmt) {
-    if (prog->stmt_count == 0) {
-        prog->statements = (Stmt **)malloc(sizeof(Stmt *));
-    } else {
-        // this seems inefficient
-        prog->statements = (Stmt **)realloc(prog->statements, (prog->stmt_count + 1) * sizeof(Stmt *));
+    // Check if we need to resize the array
+    if (prog->stmt_count >= prog->capacity) {
+        // Double the capacity
+        int new_capacity = prog->capacity * 2;
+        prog->statements = (Stmt **)s_realloc(prog->statements, new_capacity * sizeof(Stmt *));
+        prog->capacity = new_capacity;
     }
+    
     prog->statements[prog->stmt_count++] = stmt;
 }
 
@@ -94,10 +102,12 @@ static Stmt *parse_expression_stmt(Parser *this) {
     Expr *expr = parse_expression(this, LOWEST);
 
     expect_next(this, tok_semi);  // expect a semicolon after the expression
-    consume(this);  // consume the semicolon
+    // consume the semicolon
+    consume(this);
+    consume(this);
 
     // create expression statement
-    Stmt *stmt = (Stmt *)malloc(sizeof(Stmt));
+    Stmt *stmt = (Stmt *)s_malloc(sizeof(Stmt));
     stmt->type = STMT_EXPR;
     stmt->expression_stmt.value = expr;
 
@@ -111,7 +121,9 @@ static Stmt *parse_return(Parser *this) {
     Expr *value = parse_expression(this, LOWEST);
 
     expect_next(this, tok_semi);  // expect a semicolon after the return value
-    consume(this);  // consume the semicolon
+    // consume the semicolon
+    consume(this);
+    consume(this);
 
     return return_stmt(value);
 }
@@ -136,21 +148,12 @@ static Expr *parse_prefix(Parser *this) {
             consume(this);  // consume the '!' token
             return unary_expr(op, parse_expression(this, PREFIX));
         }
-        // case tok_string:
-        //     return string_literal(parser->lexer->tokens[parser->next_tok_index - 1].str_val);
-        // case tok_bool:
-        //     return bool_literal(parser->lexer->tokens[parser->next_tok_index - 1].bool_val);
-        // case tok_identifier:
-        //     return NULL;
         case tok_lparen:
             consume(this);
             Expr *expr = parse_expression(this, LOWEST);
             expect_next(this, tok_rparen);  // error out if we don't have a closing parenthesis
             consume(this);                  // consume the closing parenthesis
             return expr;
-        // case tok_minus:
-        //     consume(parser);
-        //     return unary_expr(parser->cur_tok, parse_expression(parser));
         default:
             fprintf(stderr, "Unknown prefix token: %s\n", token_to_string(this->cur_tok));
             exit(1);
@@ -177,7 +180,7 @@ static Expr *parse_infix(Parser *this, Expr *left) {
             return parse_binary_expr(this, left, op_token);
         }
         default:
-            return NULL;
+            return NULL; // TODO: handle other infix expressions like function calls
     }
 }
 

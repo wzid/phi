@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "memory.h"
+
 static void add_token(Lexer *lexer, Token type, char *val);
 static void handle_identifier(Lexer *lexer);
 static char next_char(Lexer *lexer);
@@ -108,7 +110,7 @@ int lex(Lexer *lexer) {
                     
 
                     int str_len = lexer->cur_tok - str_start;
-                    char *string = (char *)malloc(str_len + 1);
+                    char *string = (char *)s_malloc(str_len + 1);
 
                     strncpy(string, str_start, str_len);
                     string[str_len] = '\0';
@@ -121,7 +123,7 @@ int lex(Lexer *lexer) {
                     while (isdigit(*lexer->cur_tok)) lexer->cur_tok++;
 
                     int str_len = lexer->cur_tok - str_start;
-                    char *number = (char *)malloc(str_len + 1);
+                    char *number = (char *)s_malloc(str_len + 1);
 
                     strncpy(number, str_start, str_len);
                     number[str_len] = '\0';
@@ -152,9 +154,9 @@ int lex(Lexer *lexer) {
 }
 
 static void add_token(Lexer *lexer, Token type, char *val) {
-    if (lexer->token_count == lexer->capacity) {
+    if (lexer->token_count == (int) lexer->capacity) {
         size_t new_capacity = lexer->capacity == 0 ? 8 : lexer->capacity * 2;
-        lexer->tokens = (TokenData *)realloc(lexer->tokens, new_capacity * sizeof(TokenData));
+        lexer->tokens = (TokenData *)s_realloc(lexer->tokens, new_capacity * sizeof(TokenData));
         if (!lexer->tokens) {
             perror("Error reallocating memory");
             exit(1);
@@ -180,7 +182,7 @@ static void handle_identifier(Lexer *lexer) {
     while (isalnum(*lexer->cur_tok)) lexer->cur_tok++;
 
     int str_len = lexer->cur_tok - str_start;
-    char *identifier = (char *)malloc(str_len + 1);
+    char *identifier = (char *)s_malloc(str_len + 1);
 
     strncpy(identifier, str_start, str_len);
     identifier[str_len] = '\0';
@@ -205,14 +207,14 @@ static char next_char(Lexer *lexer) {
 
 // Free the memory allocated for the lexer
 void free_lexer(Lexer *lexer) {
-    for (size_t i = 0; i < lexer->token_count; i++) {
+    for (int i = 0; i < lexer->token_count; i++) {
         if (lexer->tokens[i].type == tok_identifier || lexer->tokens[i].type == tok_string ||
             lexer->tokens[i].type == tok_number || lexer->tokens[i].type == tok_type || 
             lexer->tokens[i].type == tok_return || lexer->tokens[i].type == tok_func) {
-            free(lexer->tokens[i].val);
+            s_free(lexer->tokens[i].val);
         }
     }
-    free(lexer->tokens);
+    s_free(lexer->tokens);
 }
 
 char *token_to_string(Token token) {
