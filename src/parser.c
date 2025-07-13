@@ -93,9 +93,8 @@ static Stmt *parse_expression_stmt(Parser *this) {
     // parse expression
     Expr *expr = parse_expression(this, LOWEST);
 
-    if (peek(this) == tok_semi) {
-        consume(this);  // consume the semicolon
-    }
+    expect_next(this, tok_semi);  // expect a semicolon after the expression
+    consume(this);  // consume the semicolon
 
     // create expression statement
     Stmt *stmt = (Stmt *)malloc(sizeof(Stmt));
@@ -109,10 +108,11 @@ static Stmt *parse_return(Parser *this) {
     // advance past return keyword
     consume(this);
 
-    // parse expression
     Expr *value = parse_expression(this, LOWEST);
 
-    // create return statement
+    expect_next(this, tok_semi);  // expect a semicolon after the return value
+    consume(this);  // consume the semicolon
+
     return return_stmt(value);
 }
 
@@ -183,7 +183,7 @@ static Expr *parse_infix(Parser *this, Expr *left) {
 
 static Expr *parse_binary_expr(Parser *this, Expr *left, TokenData op_token) {
     Precedence curr_precedence = get_precedence(op_token.type);
-
+    
     Expr *right = parse_expression(this, curr_precedence);
     return binary_expr(left, op_token, right);
 }

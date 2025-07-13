@@ -1,1 +1,1 @@
-ExprStmt(UnaryExpr(! BinaryExpr(IntLiteral(7) + IntLiteral(8))))
+ReturnStmt(UnaryExpr(! BinaryExpr(IntLiteral(7) + IntLiteral(8))))
