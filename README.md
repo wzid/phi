@@ -1,5 +1,5 @@
 # phi φ
-A compiler written in C using LLVM
+An LLVM enabled compiler written in C
 
 The name is inspired from [Euler's totient function](https://en.wikipedia.org/wiki/Euler%27s_totient_function) which is also called Euler's phi function.
 
