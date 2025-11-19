@@ -9,7 +9,6 @@ WHITE="\033[97m"
 RED="\033[31m"
 RESET="\033[0m"
 
-set -e
 
 type=$1
 COMPILER=./bin/test-$type
@@ -21,7 +20,11 @@ file_names=()
 for file in ./test-cases/$type/*.phi; do
     
     file_name=$(basename $file .phi)
-    $COMPILER $file > $DIR/$file_name.out 2>&1 &
+    # Run the compiler with a timeout of 10 seconds, redirecting both stdout and stderr to .out file
+    # Use & to run in background
+    # The timeout is used to make sure that we don't get stuck in an infinite loop while compiling the program
+    # This only matters if there is an error in our compiler code where an infinite loop could occur
+    gtimeout 10s $COMPILER $file > $DIR/$file_name.out 2>&1 &
 
     pids+=($!)
     file_names+=($file_name)
@@ -32,12 +35,21 @@ error_file_names=()
 for i in ${!pids[@]}; do
     pid=${pids[$i]}
     file_name=${file_names[$i]}
+    out_file="$DIR/$file_name.out"
+
+    # Wait for the process to finish
+    wait $pid
+    status=$?
 
     # If non zero return value (compile error)
-    if ! wait $pid; then
+    if [ $status -ne 0 ]; then
         error_file_names+=($file_name)
     fi
 
+    # If timeout occurred (status 124), append message to .out file
+    if [ $status -eq 124 ]; then
+        echo "[TIMEOUT] Test case exceeded 10 seconds." >> "$out_file"
+    fi
 done
 
 echo

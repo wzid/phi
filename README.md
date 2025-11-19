@@ -21,6 +21,11 @@ func main() {
 }
 ```
 
+## Prerequisites
+You will need llvm installed along with coreutils on MacOS.
+I forget how to install llvm correctly, it may just be `brew install llvm`
+CoreUtils is `brew install coreutils`
+
 ## Build Commands
 
 The project uses a Makefile to build and test the compiler. Here are the available commands:

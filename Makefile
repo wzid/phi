@@ -8,7 +8,7 @@ CORE_OBJS  := $(filter-out obj/main.o,$(OBJ_FILES))
 
 TEST_DRIVERS := $(notdir $(wildcard test-cases/*-main.c))
 TEST_NAMES   := $(TEST_DRIVERS:-main.c=)          # foo-main.c → foo
-TEST_BINS    := $(addprefix bin/test-,$(TEST_NAMES))
+TEST_BINS    := $(addprefix test-,$(TEST_NAMES))
 
 obj/%.o: %.c | obj
 	clang -Wall -Wextra $(shell llvm-config --cflags) -I./include -c $< -o $@

@@ -8,7 +8,7 @@ typedef struct {
     Lexer *lexer;
     Token cur_tok;
     Token next_tok;
-    int next_tok_index; // technically this is the index of the next token
+    int next_tok_index;
 } Parser;
 
 typedef enum {
