@@ -14,13 +14,18 @@ typedef struct {
     LLVMModuleRef module;
     LLVMBuilderRef builder;
     LLVMExecutionEngineRef engine;
+    // Symbol Table
+    char **var_names;
+    LLVMValueRef *var_allocas;
+    int var_count;
+    int var_capacity;
 } CodeGen;
 
 CodeGen *init_codegen(const char *module_name);
 void cleanup_codegen(CodeGen *this);
 LLVMValueRef codegen_program(CodeGen *this, Program *program);
 LLVMValueRef codegen_expr(CodeGen *this, Expr *expr);
-void codegen_stmt(CodeGen *this, Stmt *stmt);
+int codegen_stmt(CodeGen *this, Stmt *stmt);
 
 // Utility functions
 void dump_ir(CodeGen *this);

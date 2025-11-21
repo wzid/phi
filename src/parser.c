@@ -12,6 +12,7 @@ static TokenData next_token_data(Parser *this);
 static void expect_next(Parser *this, Token expected);
 static void add_statement(Program *prog, Stmt *stmt);
 
+static Stmt *parse_var_decl(Parser *this);
 static Stmt *parse_return(Parser *this);
 static Stmt *parse_expression_stmt(Parser *this);
 static Expr *parse_expression(Parser *this, Precedence precedence);
@@ -45,7 +46,7 @@ Program *parse(Parser *this) {
                 // parse function declaration
                 break;
             case tok_type:
-                // parse variable declaration
+                stmt = parse_var_decl(this);
                 break;
             case tok_return:
                 // parse return statement
@@ -114,6 +115,25 @@ static Stmt *parse_expression_stmt(Parser *this) {
     return stmt;
 }
 
+static Stmt *parse_var_decl(Parser *this) {
+    // advance past 'int' keyword
+    consume(this);
+
+    TokenData identifier = curr_token_data(this);
+    expect_next(this, tok_equal);
+    consume(this);  // consume identifier
+    consume(this);  // consume '='
+
+    Expr *value = parse_expression(this, LOWEST);
+
+    expect_next(this, tok_semi);  // expect a semicolon after the expression
+    // consume the semicolon
+    consume(this);
+    consume(this);
+
+    return var_decl_stmt(identifier, value);
+}
+
 static Stmt *parse_return(Parser *this) {
     // advance past return keyword
     consume(this);
@@ -141,6 +161,8 @@ static Expr *parse_expression(Parser *this, Precedence precedence) {
 
 static Expr *parse_prefix(Parser *this) {
     switch (this->cur_tok) {
+        case tok_identifier:
+            return identifier_expr(curr_token_data(this));
         case tok_number:
             return int_literal(curr_token_data(this).val);
         case tok_minus: {

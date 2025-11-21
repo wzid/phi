@@ -11,6 +11,7 @@ typedef struct stmt Stmt;
 typedef enum {
     EXPR_BINARY,
     EXPR_UNARY,
+    EXPR_IDENTIFIER,
     EXPR_LITERAL_INT,
     EXPR_LITERAL_STRING,
     EXPR_LITERAL_BOOL,
@@ -29,6 +30,10 @@ typedef struct {
 } UnaryExpr;
 
 typedef struct {
+    TokenData tok;
+} IdentifierExpr;
+
+typedef struct {
     char *value;
 } IntLiteral;
 
@@ -45,6 +50,7 @@ struct expr {
     union {
         BinaryExpr binary;
         UnaryExpr unary;
+        IdentifierExpr identifier;
         IntLiteral int_literal;
         StringLiteral str_literal;
         BoolLiteral bool_literal;
@@ -62,11 +68,6 @@ typedef enum {
     STMT_BLOCK,
 } StmtKind;
 
-// typedef struct {
-//     TokenData tok_identifier;
-//     Expr *value;
-// } VarDeclStmt;
-
 typedef struct {
     Expr *value;
 } ExprStmt;
@@ -80,10 +81,15 @@ typedef struct {
     int stmt_count;
 } BlockStmt;
 
+typedef struct {
+    TokenData tok_identifier;
+    Expr *value;
+} VarDeclStmt;
+
 struct stmt {
     StmtKind type;
     union {
-        // VarDeclStmt var_decl;
+        VarDeclStmt var_decl;
         ExprStmt expression_stmt;
         ReturnStmt return_stmt;
         BlockStmt block_stmt;
@@ -100,10 +106,12 @@ typedef struct {
 // Expressions
 Expr *binary_expr(Expr *left, TokenData op, Expr *right);
 Expr *unary_expr(TokenData op, Expr *right);
+Expr *identifier_expr(TokenData identifier);
 Expr *int_literal(char *value);
 Expr *string_literal(char *value);
 Expr *bool_literal(int value);
 
+Stmt *var_decl_stmt(TokenData identifier, Expr *value);
 Stmt *return_stmt(Expr *value);
 Stmt *block_stmt(Stmt **statements, int stmt_count);
 

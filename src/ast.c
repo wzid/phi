@@ -26,6 +26,15 @@ Expr *unary_expr(TokenData op, Expr *right) {
     return expr;
 }
 
+Expr *identifier_expr(TokenData identifier) {
+    Expr *expr = (Expr *)s_malloc(sizeof(Expr));
+
+    expr->type = EXPR_IDENTIFIER;
+    expr->identifier.tok = identifier;
+
+    return expr;
+}
+
 Expr *int_literal(char *value) {
     Expr *expr = (Expr *)s_malloc(sizeof(Expr));
 
@@ -51,6 +60,16 @@ Expr *bool_literal(int value) {
     expr->bool_literal.value = value;
 
     return expr;
+}
+
+Stmt *var_decl_stmt(TokenData identifier, Expr *value) {
+    Stmt *stmt = (Stmt *)s_malloc(sizeof(Stmt));
+
+    stmt->type = STMT_VAR_DECL;
+    stmt->var_decl.tok_identifier = identifier;
+    stmt->var_decl.value = value;
+
+    return stmt;
 }
 
 Stmt *return_stmt(Expr *value) {
@@ -102,6 +121,9 @@ char *expr_to_string(Expr *expr) {
             s_free(right_str);
             return buffer;
         }
+        case EXPR_IDENTIFIER:
+            snprintf(buffer, 512, "IdentifierExpr(%s)", expr->identifier.tok.val);
+            return buffer;
         case EXPR_LITERAL_INT:
             snprintf(buffer, 512, "IntLiteral(%s)", expr->int_literal.value);
             return buffer;
@@ -124,6 +146,12 @@ char *stmt_to_string(Stmt *stmt) {
     char *buffer = s_malloc(1024);
 
     switch (stmt->type) {
+        case STMT_VAR_DECL: {
+            char *expr_str = expr_to_string(stmt->var_decl.value);
+            snprintf(buffer, 1024, "VarDeclStmt(%s = %s)", stmt->var_decl.tok_identifier.val, expr_str);
+            s_free(expr_str);
+            return buffer;
+        }
         case STMT_RETURN: {
             if (stmt->return_stmt.value) {
                 char *expr_str = expr_to_string(stmt->return_stmt.value);
