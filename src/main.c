@@ -1,10 +1,44 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <llvm-c/Transforms/PassBuilder.h>
+#include <llvm-c/Core.h>
+#include <llvm-c/Analysis.h>
+#include <string.h>
 
 #include "codegen.h"
 #include "lexer.h"
 #include "memory.h"
 #include "parser.h"
+
+void optimize_module(CodeGen *this) {
+    // Create pass builder options
+    LLVMPassBuilderOptionsRef opts = LLVMCreatePassBuilderOptions();
+
+    // Set debug options if you want (optional)
+    LLVMPassBuilderOptionsSetVerifyEach(opts, 0);
+    LLVMPassBuilderOptionsSetDebugLogging(opts, 0);
+
+    // Use the "default<O2>" pipeline, just like: opt -passes="default<O2>"
+    const char *pipeline = "default<O2>";
+
+    // If you don't have a target machine, pass NULL
+    LLVMTargetMachineRef tm = NULL;
+
+    LLVMErrorRef err = LLVMRunPasses(
+        this->module,
+        pipeline,
+        tm,
+        opts
+    );
+
+    if (err) {
+        char *msg = LLVMGetErrorMessage(err);
+        fprintf(stderr, "LLVM optimization error: %s\n", msg);
+        LLVMDisposeErrorMessage(msg);
+    }
+
+    LLVMDisposePassBuilderOptions(opts);
+}
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -12,12 +46,15 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    
     // Open the file
     FILE *file = fopen(argv[1], "r");
     if (!file) {
         perror("Error opening file");
         return 1;
     }
+    
+    int optimize = argv[2] && (!strcmp(argv[2], "--optimize") || !strcmp(argv[2], "-O"));
 
     // Get file size
     fseek(file, 0, SEEK_END);
@@ -70,6 +107,15 @@ int main(int argc, char *argv[]) {
                 // Print the generated LLVM IR
                 printf("\nGenerated LLVM IR:\n");
                 dump_ir(codegen);
+
+                if (optimize) {
+                    // Optimize the module
+                    optimize_module(codegen);
+    
+                    printf("\nOptimized LLVM IR:\n");
+                    dump_ir(codegen);
+                }
+
 
                 // Optionally run the code using JIT
                 printf("\nExecuting code...\n");
