@@ -17,6 +17,8 @@
         "executionengine.h": "c",
         "codegen.h": "c",
         "analysis.h": "c",
-        "target.h": "c"
+        "target.h": "c",
+        "memory.h": "c",
+        "bitwriter.h": "c"
     }
 }

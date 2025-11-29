@@ -1,1 +1,2 @@
-ReturnStmt(UnaryExpr(! IntLiteral(4)))
+FuncDeclStmt(main)
+  ReturnStmt(UnaryExpr(! IntLiteral(4)))

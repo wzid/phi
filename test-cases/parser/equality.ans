@@ -1,1 +1,2 @@
-ReturnStmt(BinaryExpr(IntLiteral(10) == IntLiteral(14)))
+FuncDeclStmt(main)
+  ReturnStmt(BinaryExpr(IntLiteral(10) == IntLiteral(14)))

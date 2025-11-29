@@ -1,1 +1,3 @@
-return -(10 + 20);
+func main() {
+    return -(10 + 20);
+}

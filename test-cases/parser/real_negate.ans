@@ -1,1 +1,2 @@
-ReturnStmt(UnaryExpr(- BinaryExpr(IntLiteral(10) + IntLiteral(20))))
+FuncDeclStmt(main)
+  ReturnStmt(UnaryExpr(- BinaryExpr(IntLiteral(10) + IntLiteral(20))))

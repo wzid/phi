@@ -31,7 +31,8 @@ typedef enum {
     tok_type,
     tok_string,
     tok_identifier,
-    tok_number
+    tok_number,
+    tok_colon,
 } Token;
 
 typedef struct {

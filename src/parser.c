@@ -10,11 +10,17 @@ static TokenData curr_token_data(Parser *this);
 static TokenData next_token_data(Parser *this);
 
 static void expect_next(Parser *this, Token expected);
+static void expect_and_consume_current(Parser *this, Token expected);
 static void add_statement(Program *prog, Stmt *stmt);
 
+static Stmt **parse_block_statements(Parser *this, int *out_stmt_count);
+static Stmt *parse_func_decl(Parser *this);
 static Stmt *parse_var_decl(Parser *this);
 static Stmt *parse_return(Parser *this);
 static Stmt *parse_expression_stmt(Parser *this);
+static void parse_function_parameters(Parser *this, TokenData** out_parameter_names, TokenData** out_parameter_types, int *out_param_count);
+static Expr **parse_function_arguments(Parser *this, int *out_arg_count);
+static Expr *parse_function_call(Parser *this);
 static Expr *parse_expression(Parser *this, Precedence precedence);
 static Expr *parse_prefix(Parser *this);
 static Expr *parse_infix(Parser *this, Expr *left);
@@ -33,6 +39,7 @@ Parser init_parser(Lexer *lexer) {
     return parser;
 }
 
+// outside of a function the only things we can parse are function declarations and variable declarations
 Program *parse(Parser *this) {
     Program *prog = (Program *)s_malloc(sizeof(Program));
     prog->stmt_count = 0;
@@ -43,17 +50,15 @@ Program *parse(Parser *this) {
         Stmt *stmt = NULL;
         switch (this->cur_tok) {
             case tok_func:
-                // parse function declaration
+                stmt = parse_func_decl(this);
                 break;
             case tok_type:
-                stmt = parse_var_decl(this);
-                break;
-            case tok_return:
-                // parse return statement
-                stmt = parse_return(this);
+                // todo: parse global variable declaration
                 break;
             default:
-                stmt = parse_expression_stmt(this);
+                // throw an error
+                fprintf(stderr, "Unexpected token at top level: %s\n", token_to_string(this->cur_tok));
+                exit(1);
                 break;
         }
         add_statement(prog, stmt);
@@ -76,6 +81,11 @@ static Token peek(Parser *this) { return this->next_tok; }
 static TokenData curr_token_data(Parser *this) { return this->lexer->tokens[this->next_tok_index - 1]; }
 
 static TokenData next_token_data(Parser *this) { return this->lexer->tokens[this->next_tok_index]; }
+
+static void expect_and_consume_current(Parser *this, Token expected) {
+    expect_next(this, expected);
+    consume(this);
+}
 
 static void expect_next(Parser *this, Token expected) {
     if (peek(this) != expected) {
@@ -102,9 +112,8 @@ static Stmt *parse_expression_stmt(Parser *this) {
     // parse expression
     Expr *expr = parse_expression(this, LOWEST);
 
-    expect_next(this, tok_semi);  // expect a semicolon after the expression
-    // consume the semicolon
-    consume(this);
+    // expect a semicolon after the expression
+    expect_and_consume_current(this, tok_semi);
     consume(this);
 
     // create expression statement
@@ -115,20 +124,140 @@ static Stmt *parse_expression_stmt(Parser *this) {
     return stmt;
 }
 
+/*
+Parameters:
+ - this: the parser
+ - out_parameter_names: pointer to array of TokenData to hold parameter names
+ - out_parameter_types: pointer to array of TokenData to hold parameter types
+ - out_param_count: pointer to int to hold number of parameters parsed
+*/
+static void parse_function_parameters(Parser *this, TokenData** out_parameter_names, TokenData** out_parameter_types, int *out_param_count) {
+    int capacity = 4; // initial capacity
+    *out_parameter_names = (TokenData *)s_malloc(capacity * sizeof(TokenData));
+    *out_parameter_types = (TokenData *)s_malloc(capacity * sizeof(TokenData));
+    int param_count = 0;
+
+    while (this->cur_tok != tok_rparen && this->cur_tok != tok_eof) {
+        TokenData param_name = curr_token_data(this);
+        expect_and_consume_current(this, tok_colon);
+        expect_and_consume_current(this, tok_type);
+        TokenData param_type = curr_token_data(this);
+
+        // Add parameter to the array
+        if (param_count >= capacity) {
+            capacity *= 2;
+            *out_parameter_names = (TokenData *)s_realloc(*out_parameter_names, capacity * sizeof(TokenData));
+            *out_parameter_types = (TokenData *)s_realloc(*out_parameter_types, capacity * sizeof(TokenData));
+        }
+        (*out_parameter_names)[param_count] = param_name;
+        (*out_parameter_types)[param_count] = param_type;
+        param_count++;
+        if (peek(this) == tok_comma) {
+            consume(this); // consume comma
+            consume(this); // move to next parameter
+        } else {
+            break; // no more parameters
+        }
+    }
+
+    *out_param_count = param_count;
+}
+
+static Stmt *parse_func_decl(Parser *this) {
+    // advance past 'func' keyword
+    expect_and_consume_current(this, tok_identifier);
+    TokenData func_name = curr_token_data(this);
+    expect_and_consume_current(this, tok_lparen);
+
+    // Need to gather the parameter names and types!
+    TokenData *parameter_names = NULL;
+    TokenData *parameter_types = NULL;
+    int parameter_count = 0;
+    // no parameters
+    if (peek(this) == tok_rparen) {
+        expect_and_consume_current(this, tok_rparen);
+    } else {
+        consume(this); // move to first parameter
+        // modifies the parameter arrays and count
+        parse_function_parameters(this, &parameter_names, &parameter_types, &parameter_count);
+        expect_and_consume_current(this, tok_rparen);
+    }
+
+    TokenData return_type = {0};
+    if (peek(this) == tok_colon) {
+        consume(this); // consume return type token
+        expect_and_consume_current(this, tok_type);
+        return_type = curr_token_data(this);
+    }
+
+    expect_and_consume_current(this, tok_lbrace);
+    consume(this); // move past '{' token
+
+    // Parse function body
+    int stmt_count = 0;
+    
+    Stmt **statements = parse_block_statements(this, &stmt_count);
+
+    if (this->cur_tok != tok_rbrace) {
+        Location loc = curr_token_data(this).loc;
+        fprintf(stderr, "(%zu:%zu) Expected closing '}' for function body, got %s\n", loc.line, loc.col,
+                token_to_string(this->cur_tok));
+        exit(1);
+    }
+
+    consume(this); // move past '}' token
+
+    // Create block statement for function body
+    Stmt *body = block_stmt(statements, stmt_count);
+
+    // For simplicity, we ignore function declaration details and return the body directly
+    return func_decl_stmt(func_name, body, return_type, parameter_names, parameter_types, parameter_count);
+}
+
+static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
+    int capacity = 8; // initial capacity
+    Stmt **statements = (Stmt **)s_malloc(capacity * sizeof(Stmt *));
+    int stmt_count = 0;
+
+    while (this->cur_tok != tok_rbrace && this->cur_tok != tok_eof) {
+        Stmt *stmt = NULL;
+        switch (this->cur_tok) {
+            case tok_type:
+                stmt = parse_var_decl(this);
+                break;
+            case tok_return:
+                stmt = parse_return(this);
+                break;
+            default:
+                stmt = parse_expression_stmt(this);
+                break;
+        }
+
+        // Add statement to the array
+        if (stmt_count >= capacity) {
+            capacity *= 2;
+            statements = (Stmt **)s_realloc(statements, capacity * sizeof(Stmt *));
+        }
+        statements[stmt_count++] = stmt;
+    }
+
+    *out_stmt_count = stmt_count;
+    return statements;
+}
+
 static Stmt *parse_var_decl(Parser *this) {
     // advance past 'int' keyword
     consume(this);
 
     TokenData identifier = curr_token_data(this);
-    expect_next(this, tok_equal);
-    consume(this);  // consume identifier
-    consume(this);  // consume '='
+    expect_and_consume_current(this, tok_equal);
+    consume(this);  // move past '=' token
 
     Expr *value = parse_expression(this, LOWEST);
 
-    expect_next(this, tok_semi);  // expect a semicolon after the expression
+    expect_and_consume_current(this, tok_semi);  // expect a semicolon after the expression
+    
     // consume the semicolon
-    consume(this);
     consume(this);
 
     return var_decl_stmt(identifier, value);
@@ -140,12 +269,53 @@ static Stmt *parse_return(Parser *this) {
 
     Expr *value = parse_expression(this, LOWEST);
 
-    expect_next(this, tok_semi);  // expect a semicolon after the return value
-    // consume the semicolon
-    consume(this);
-    consume(this);
+    expect_and_consume_current(this, tok_semi);  // expect a semicolon after the return value
+    consume(this); // move past ';' token
 
     return return_stmt(value);
+}
+
+static Expr **parse_function_arguments(Parser *this, int *out_arg_count) {
+    int capacity = 4; // initial capacity
+    Expr **args = (Expr **)s_malloc(capacity * sizeof(Expr *));
+    int arg_count = 0;
+
+    while (this->cur_tok != tok_rparen && this->cur_tok != tok_eof) {
+        Expr *arg = parse_expression(this, LOWEST);
+
+        // Add argument to the array
+        if (arg_count >= capacity) {
+            capacity *= 2;
+            args = (Expr **)s_realloc(args, capacity * sizeof(Expr *));
+        }
+        args[arg_count++] = arg;
+
+        if (peek(this) == tok_comma) {
+            consume(this); // consume current
+            consume(this); // consume comma and move to next argument
+        } else {
+            break; // no more arguments
+        }
+    }
+
+    *out_arg_count = arg_count;
+    return args;
+}
+
+static Expr *parse_function_call(Parser *this) {
+    TokenData func_name = curr_token_data(this);
+    expect_and_consume_current(this, tok_lparen);
+    if (peek(this) == tok_rparen) {
+        // no arguments
+        expect_and_consume_current(this, tok_rparen);
+        return func_call(func_name, NULL, 0);
+    } else {
+        consume(this); // move to first argument
+        int arg_count = 0;
+        Expr **args = parse_function_arguments(this, &arg_count);
+        expect_and_consume_current(this, tok_rparen);
+        return func_call(func_name, args, arg_count);
+    }
 }
 
 static Expr *parse_expression(Parser *this, Precedence precedence) {
@@ -206,6 +376,11 @@ static Expr *parse_infix(Parser *this, Expr *left) {
             consume(this);
             return parse_binary_expr(this, left, op_token);
         }
+        // the left expression is just an identifier expr which 
+        // we don't need because we only need to get the function name
+        case tok_lparen:
+            return parse_function_call(this);
+
         default:
             return NULL; // TODO: handle other infix expressions like function calls
     }

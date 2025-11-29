@@ -1,4 +1,4 @@
-func getTwo(): int {
+func getTwo() {
     return 2;
 }
 

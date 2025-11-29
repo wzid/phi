@@ -1,1 +1,2 @@
-ReturnStmt(BinaryExpr(IntLiteral(1) + IntLiteral(1)))
+FuncDeclStmt(main)
+  ReturnStmt(BinaryExpr(IntLiteral(1) + IntLiteral(1)))

@@ -1,0 +1,4 @@
+FuncDeclStmt(calculate, (a: int, b: int))
+  ReturnStmt(BinaryExpr(IdentifierExpr(a) * IdentifierExpr(b)))
+FuncDeclStmt(main)
+  ReturnStmt(FuncCallExpr(calculate(IntLiteral(2), IntLiteral(3))))

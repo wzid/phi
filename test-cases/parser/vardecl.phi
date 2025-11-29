@@ -1,2 +1,4 @@
-int result = 4;
-return result + 5;
+func main() {
+    int result = 4;
+    return result + 5;
+}

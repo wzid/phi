@@ -1,0 +1,6 @@
+FuncDeclStmt(getTwo)
+  ReturnStmt(IntLiteral(2))
+FuncDeclStmt(add, (a: int, b: int))
+  ReturnStmt(BinaryExpr(IdentifierExpr(a) + IdentifierExpr(b)))
+FuncDeclStmt(main)
+  ReturnStmt(FuncCallExpr(add(FuncCallExpr(getTwo), FuncCallExpr(getTwo))))

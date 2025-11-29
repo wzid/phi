@@ -1,1 +1,2 @@
-ReturnStmt(UnaryExpr(! BinaryExpr(IntLiteral(7) + IntLiteral(8))))
+FuncDeclStmt(main)
+  ReturnStmt(UnaryExpr(! BinaryExpr(IntLiteral(7) + IntLiteral(8))))

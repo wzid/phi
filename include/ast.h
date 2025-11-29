@@ -15,7 +15,7 @@ typedef enum {
     EXPR_LITERAL_INT,
     EXPR_LITERAL_STRING,
     EXPR_LITERAL_BOOL,
-    EXPR_CALL,
+    EXPR_FUNC_CALL,
 } ExprKind;
 
 typedef struct {
@@ -45,6 +45,12 @@ typedef struct {
     int value;
 } BoolLiteral;
 
+typedef struct {
+    TokenData tok_function;
+    Expr **args;
+    int arg_count;
+} FuncCallExpr;
+
 struct expr {
     ExprKind type;
     union {
@@ -54,6 +60,7 @@ struct expr {
         IntLiteral int_literal;
         StringLiteral str_literal;
         BoolLiteral bool_literal;
+        FuncCallExpr func_call;
     };
 };
 
@@ -86,10 +93,20 @@ typedef struct {
     Expr *value;
 } VarDeclStmt;
 
+typedef struct {
+    TokenData tok_identifier;
+    Stmt *body;
+    TokenData tok_return_type;
+    TokenData *parameter_names;
+    TokenData *parameter_types;
+    int parameter_count;
+} FuncDeclStmt;
+
 struct stmt {
     StmtKind type;
     union {
         VarDeclStmt var_decl;
+        FuncDeclStmt func_decl;
         ExprStmt expression_stmt;
         ReturnStmt return_stmt;
         BlockStmt block_stmt;
@@ -110,7 +127,9 @@ Expr *identifier_expr(TokenData identifier);
 Expr *int_literal(char *value);
 Expr *string_literal(char *value);
 Expr *bool_literal(int value);
+Expr *func_call(TokenData tok_function, Expr **args, int arg_count);
 
+Stmt *func_decl_stmt(TokenData identifier, Stmt *body, TokenData return_type, TokenData *parameter_names, TokenData *parameter_types, int parameter_count);
 Stmt *var_decl_stmt(TokenData identifier, Expr *value);
 Stmt *return_stmt(Expr *value);
 Stmt *block_stmt(Stmt **statements, int stmt_count);

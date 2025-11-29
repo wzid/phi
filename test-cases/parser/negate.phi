@@ -1,1 +1,3 @@
-return !4;
+func main() {
+    return !4;
+}

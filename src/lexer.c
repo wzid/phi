@@ -77,6 +77,9 @@ int lex(Lexer *lexer) {
             case '&':
                 add_token(lexer, tok_and, "&");
                 break;
+            case ':':
+                add_token(lexer, tok_colon, ":");
+                break;
             case '|':
                 add_token(lexer, tok_or, "|");
                 break;
@@ -247,6 +250,7 @@ char *token_to_string(Token token) {
         case tok_string: return "TOK_STRING";
         case tok_identifier: return "TOK_IDENTIFIER";
         case tok_number: return "TOK_NUMBER";
+        case tok_colon: return "TOK_COLON";
         default: return "TOK_UNKNOWN";
     }
 }
