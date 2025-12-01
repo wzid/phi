@@ -182,7 +182,7 @@ static void handle_identifier(Lexer *lexer) {
     char *str_start = lexer->cur_tok;
 
     // everything except the first character can be a number
-    while (isalnum(*lexer->cur_tok)) lexer->cur_tok++;
+    while (isalnum(*lexer->cur_tok) || *lexer->cur_tok == '_') lexer->cur_tok++;
 
     int str_len = lexer->cur_tok - str_start;
     char *identifier = (char *)s_malloc(str_len + 1);
