@@ -20,6 +20,7 @@ static void ensure_var_capacity(CodeGen* this) {
     }
 }
 
+// Set variable in symbol table
 static void codegen_set_var(CodeGen* this, const char* name, LLVMValueRef alloc) {
     ensure_var_capacity(this);
     this->var_names[this->var_count] = strdup(name);
@@ -27,6 +28,7 @@ static void codegen_set_var(CodeGen* this, const char* name, LLVMValueRef alloc)
     this->var_count++;
 }
 
+// Get variable from symbol table
 static LLVMValueRef codegen_get_var(CodeGen* this, const char* name) {
     for (int i = 0; i < this->var_count; ++i) {
         if (!strcmp(this->var_names[i], name)) return this->var_allocas[i];
@@ -81,6 +83,8 @@ void cleanup_codegen(CodeGen* this) {
     }
 }
 
+// this function was abstracted away from codegen_program to get function type
+// it was getting too big otherwise
 LLVMTypeRef get_function_type(CodeGen* this, FuncDeclStmt* func_decl) {
     TokenData return_type = func_decl->tok_return_type;
     LLVMTypeRef ret_type = LLVMVoidTypeInContext(this->context);
@@ -113,13 +117,31 @@ LLVMTypeRef get_function_type(CodeGen* this, FuncDeclStmt* func_decl) {
 
 LLVMValueRef codegen_program(CodeGen* this, Program* program) {
     // 1) Create prototypes for all functions so calls work correctly
+    // and create global variables
     for (int i = 0; i < program->stmt_count; i++) {
         Stmt* stmt = program->statements[i];
-        if (stmt->type == STMT_FUNC_DECL) {
-            FuncDeclStmt* func_decl = &stmt->func_decl;
-            LLVMTypeRef func_type = get_function_type(this, func_decl);
+        switch (stmt->type) {
+            case STMT_FUNC_DECL: {
+                FuncDeclStmt* func_decl = &stmt->func_decl;
+                LLVMTypeRef func_type = get_function_type(this, func_decl);
 
-            LLVMAddFunction(this->module, stmt->func_decl.tok_identifier.val, func_type);
+                LLVMAddFunction(this->module, stmt->func_decl.tok_identifier.val, func_type);
+                break;
+            }
+            case STMT_GLOBAL_VAR_DECL: {
+                // Handle global variable declaration
+                GlobalVarDeclStmt *global_var_decl = &stmt->global_var_decl;
+
+                // For simplicity, we only handle 'int' type globals for now
+                LLVMTypeRef var_type = LLVMInt32TypeInContext(this->context);
+                LLVMValueRef global_var = LLVMAddGlobal(this->module, var_type, global_var_decl->tok_identifier.val);
+                LLVMValueRef init_val = codegen_expr(this, global_var_decl->value);
+                LLVMSetInitializer(global_var, init_val);
+                // No need to add to symbol table since it's global
+                break;
+            }
+            default:
+                break;
         }
     }
 
@@ -135,14 +157,24 @@ LLVMValueRef codegen_program(CodeGen* this, Program* program) {
 LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
     switch (expr->type) {
         case EXPR_IDENTIFIER: {
-            LLVMValueRef var_alloca = codegen_get_var(this, expr->identifier.tok.val);
-            if (!var_alloca) {
-                fprintf(stderr, "Undefined variable: %s\n", expr->identifier.tok.val);
-                return NULL;
-            }
-            LLVMTypeRef elemType = LLVMGetAllocatedType(var_alloca);
+            // Load variable value for use in an expression
 
-            return LLVMBuildLoad2(this->builder, elemType, var_alloca, expr->identifier.tok.val);
+            // 1) See if the variable is in the symbol table
+            LLVMValueRef var_alloca = codegen_get_var(this, expr->identifier.tok.val);
+            if (var_alloca) {
+                LLVMTypeRef elemType = LLVMGetAllocatedType(var_alloca);
+                return LLVMBuildLoad2(this->builder, elemType, var_alloca, expr->identifier.tok.val);
+            }
+
+            // 2) If not found, it might be a global variable
+            LLVMValueRef global_var = LLVMGetNamedGlobal(this->module, expr->identifier.tok.val);
+            if (global_var) {
+                LLVMTypeRef var_type = LLVMGlobalGetValueType(global_var);
+                return LLVMBuildLoad2(this->builder, var_type, global_var, expr->identifier.tok.val);
+            }
+            
+            fprintf(stderr, "Undefined variable: %s\n", expr->identifier.tok.val);
+            return NULL;
         }
         case EXPR_LITERAL_INT: {
             // Parse integer literal
@@ -150,8 +182,8 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
             LLVMTypeRef int32_type = LLVMInt32TypeInContext(this->context);
             return LLVMConstInt(int32_type, value, 0);
         }
-
         case EXPR_BINARY: {
+            // Generate code for left and right expressions
             LLVMValueRef left = codegen_expr(this, expr->binary.left);
             LLVMValueRef right = codegen_expr(this, expr->binary.right);
 
@@ -181,8 +213,10 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
         }
 
         case EXPR_UNARY: {
+            // Generate code for the right expression
             LLVMValueRef operand = codegen_expr(this, expr->unary.right);
 
+            // Handle the unary operator
             switch (expr->unary.op_token.type) {
                 case tok_minus: {
                     LLVMTypeRef int32_type = LLVMInt32TypeInContext(this->context);
@@ -204,7 +238,6 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
             LLVMTypeRef bool_type = LLVMInt1TypeInContext(this->context);
             return LLVMConstInt(bool_type, expr->bool_literal.value, 0);
         }
-
         case EXPR_LITERAL_STRING:
             // String literals would need more complex handling
             fprintf(stderr, "String literals not yet implemented\n");
@@ -227,7 +260,11 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
             }
 
             // Get the function type (callee is a function pointer/value)
+            // https://discourse.llvm.org/t/llvmbuildcall2-function-type/71093/3
+            // time spent fixing this: 1 hour
             LLVMTypeRef func_type = LLVMGlobalGetValueType(callee);
+            
+            // Build the call instruction
             LLVMValueRef call = LLVMBuildCall2(this->builder, func_type, callee, args, expr->func_call.arg_count, "calltmp");
             s_free(args);
             return call;
@@ -241,7 +278,7 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
 int codegen_stmt(CodeGen* this, Stmt* stmt) {
     switch (stmt->type) {
         case STMT_FUNC_DECL: {
-            // For simplicity, we only handle function declarations at the top level in codegen_program
+            // To help with function calls, we only handle function declarations at the top level in codegen_program
             // So here we just generate the body of the function
             LLVMValueRef func = LLVMGetNamedFunction(this->module, stmt->func_decl.tok_identifier.val);
             if (!func) {
@@ -251,12 +288,15 @@ int codegen_stmt(CodeGen* this, Stmt* stmt) {
 
             // Create a new basic block for the function body
             LLVMBasicBlockRef entry_block = LLVMAppendBasicBlockInContext(this->context, func, "entry");
-            LLVMPositionBuilderAtEnd(this->builder, entry_block);
+            // set builder to end of entry block (it just moves it after the "entry" label so instructions are "under" it)
+            LLVMPositionBuilderAtEnd(this->builder, entry_block); 
 
-            // snapshot symbol table so we can restore it when leaving this function (function-level scope)
+
+            // snapshot symbol the table so we can restore it when leaving this function (function-level scope)
+            // while keeping the same amount of global variables
             int saved_var_count = this->var_count;
 
-            // name parameters and create allocas for them in the entry block so body can load them
+            // Load parameters into allocas and register them in the symbol table
             for (int i = 0; i < stmt->func_decl.parameter_count; i++) {
                 LLVMValueRef param = LLVMGetParam(func, i);
                 const char* pname = stmt->func_decl.parameter_names[i].val;
@@ -361,18 +401,22 @@ int codegen_stmt(CodeGen* this, Stmt* stmt) {
             LLVMTypeRef var_type = LLVMTypeOf(init_val);
             printf("Variable \"%s\" has type: %s\n", stmt->var_decl.tok_identifier.val, LLVMPrintTypeToString(var_type));
             LLVMValueRef alloca = LLVMBuildAlloca(tmp_builder, var_type, stmt->var_decl.tok_identifier.val);
-
+            
             LLVMDisposeBuilder(tmp_builder);
-
+            
             // store initializer into the alloca using current builder (current insertion point)
             LLVMBuildStore(this->builder, init_val, alloca);
-
+            
             // register in symbol table
             codegen_set_var(this, stmt->var_decl.tok_identifier.val, alloca);
-
+            
+            
             break;
         }
-
+        case STMT_GLOBAL_VAR_DECL:
+            // Global variable declarations are handled at the module level
+            // This is a placeholder to avoid errors
+            break;
         default:
             fprintf(stderr, "Unknown statement type\n");
             break;
