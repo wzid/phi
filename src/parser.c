@@ -197,6 +197,25 @@ static Stmt *parse_func_decl(Parser *this) {
         return_type = curr_token_data(this);
     }
 
+    // implicit return function
+    // the syntax is func name(params):return_type => expression;
+    if (peek(this) == tok_equal) {
+        consume(this); // consume '=' token
+        expect_next_and_consume_current(this, tok_greaterthan);
+        consume(this); // consume '>' token
+        Expr *return_expr = parse_expression(this, LOWEST);
+        expect_next_and_consume_current(this, tok_semi);
+        consume(this); // consume ';' token
+
+        // create function body with return statement
+        Stmt **statements = (Stmt **)s_malloc(sizeof(Stmt *));
+        statements[0] = return_stmt(return_expr);
+        int stmt_count = 1;
+        Stmt *body = block_stmt(statements, stmt_count);
+        
+        return func_decl_stmt(func_name, body, return_type, parameter_names, parameter_types, parameter_count);
+    }
+
     expect_next_and_consume_current(this, tok_lbrace);
     consume(this); // move past '{' token
 

@@ -1,0 +1,6 @@
+func getTwo(): int => 2;
+
+func main() {
+    int two = getTwo();
+    return two + 2;
+}
