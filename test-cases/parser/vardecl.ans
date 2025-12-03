@@ -1,0 +1,3 @@
+FuncDeclStmt(main)
+  VarDeclStmt(result = IntLiteral(4))
+  ReturnStmt(BinaryExpr(IdentifierExpr(result) + IntLiteral(5)))

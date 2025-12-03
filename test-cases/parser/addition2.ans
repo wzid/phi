@@ -1,0 +1,2 @@
+FuncDeclStmt(main)
+  ReturnStmt(BinaryExpr(IntLiteral(42) + IntLiteral(1)))

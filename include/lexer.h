@@ -15,6 +15,8 @@ typedef enum {
     tok_star,
     tok_slash,
     tok_equal,
+    tok_equality,
+    tok_inequality,
     tok_lessthan,
     tok_greaterthan,
     tok_period,
@@ -29,7 +31,8 @@ typedef enum {
     tok_type,
     tok_string,
     tok_identifier,
-    tok_number
+    tok_number,
+    tok_colon,
 } Token;
 
 typedef struct {
@@ -47,7 +50,7 @@ typedef struct {
     char *start_tok;
     char *cur_tok;
     TokenData *tokens;
-    size_t token_count;
+    int token_count;
     size_t capacity;
     size_t line_number;
     char *line_start;

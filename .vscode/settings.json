@@ -10,6 +10,15 @@
         "ostream": "c",
         "print": "c",
         "cstring": "c",
-        "ast.h": "c"
+        "ast.h": "c",
+        "parser.h": "c",
+        "string.h": "c",
+        "stdlib.h": "c",
+        "executionengine.h": "c",
+        "codegen.h": "c",
+        "analysis.h": "c",
+        "target.h": "c",
+        "memory.h": "c",
+        "bitwriter.h": "c"
     }
 }

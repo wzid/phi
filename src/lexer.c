@@ -5,12 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "memory.h"
+
 static void add_token(Lexer *lexer, Token type, char *val);
 static void handle_identifier(Lexer *lexer);
+static char next_char(Lexer *lexer);
 
 int lex(Lexer *lexer) {
     while (*lexer->cur_tok != '\0') {
-        // printf("Current token: %c\n", *lexer->cur_tok);
         switch (*lexer->cur_tok) {
             case ' ':
                 // do nothing
@@ -44,7 +46,7 @@ int lex(Lexer *lexer) {
                 add_token(lexer, tok_star, "*");
                 break;
             case '/':
-                if (*(lexer->cur_tok + 1) == '/') {
+                if (next_char(lexer) == '/') {
                     // skip the comment (and don't go out of bounds)
                     while (*lexer->cur_tok != '\n' && *lexer->cur_tok != '\0') lexer->cur_tok++;
                     continue;
@@ -53,7 +55,12 @@ int lex(Lexer *lexer) {
                 }
                 break;
             case '=':
-                add_token(lexer, tok_equal, "=");
+                if (next_char(lexer) == '=') {
+                    lexer->cur_tok++; // skip the next '='
+                    add_token(lexer, tok_equality, "==");
+                } else {
+                    add_token(lexer, tok_equal, "=");
+                }
                 break;
             case '<':
                 add_token(lexer, tok_lessthan, "<");
@@ -70,11 +77,20 @@ int lex(Lexer *lexer) {
             case '&':
                 add_token(lexer, tok_and, "&");
                 break;
+            case ':':
+                add_token(lexer, tok_colon, ":");
+                break;
             case '|':
                 add_token(lexer, tok_or, "|");
                 break;
             case '!':
-                add_token(lexer, tok_not, "!");
+                if (next_char(lexer) == '=') {
+                    lexer->cur_tok++; // skip the next '='
+                    add_token(lexer, tok_inequality, "!=");
+                } else {
+                    // If it's just '!', we treat it as a logical NOT
+                    add_token(lexer, tok_not, "!");
+                }
                 break;
             case '^':
                 add_token(lexer, tok_xor, "^");
@@ -97,7 +113,7 @@ int lex(Lexer *lexer) {
                     
 
                     int str_len = lexer->cur_tok - str_start;
-                    char *string = (char *)malloc(str_len + 1);
+                    char *string = (char *)s_malloc(str_len + 1);
 
                     strncpy(string, str_start, str_len);
                     string[str_len] = '\0';
@@ -110,7 +126,7 @@ int lex(Lexer *lexer) {
                     while (isdigit(*lexer->cur_tok)) lexer->cur_tok++;
 
                     int str_len = lexer->cur_tok - str_start;
-                    char *number = (char *)malloc(str_len + 1);
+                    char *number = (char *)s_malloc(str_len + 1);
 
                     strncpy(number, str_start, str_len);
                     number[str_len] = '\0';
@@ -141,9 +157,9 @@ int lex(Lexer *lexer) {
 }
 
 static void add_token(Lexer *lexer, Token type, char *val) {
-    if (lexer->token_count == lexer->capacity) {
+    if (lexer->token_count == (int) lexer->capacity) {
         size_t new_capacity = lexer->capacity == 0 ? 8 : lexer->capacity * 2;
-        lexer->tokens = (TokenData *)realloc(lexer->tokens, new_capacity * sizeof(TokenData));
+        lexer->tokens = (TokenData *)s_realloc(lexer->tokens, new_capacity * sizeof(TokenData));
         if (!lexer->tokens) {
             perror("Error reallocating memory");
             exit(1);
@@ -166,10 +182,10 @@ static void handle_identifier(Lexer *lexer) {
     char *str_start = lexer->cur_tok;
 
     // everything except the first character can be a number
-    while (isalnum(*lexer->cur_tok)) lexer->cur_tok++;
+    while (isalnum(*lexer->cur_tok) || *lexer->cur_tok == '_') lexer->cur_tok++;
 
     int str_len = lexer->cur_tok - str_start;
-    char *identifier = (char *)malloc(str_len + 1);
+    char *identifier = (char *)s_malloc(str_len + 1);
 
     strncpy(identifier, str_start, str_len);
     identifier[str_len] = '\0';
@@ -185,16 +201,23 @@ static void handle_identifier(Lexer *lexer) {
     }
 }
 
+static char next_char(Lexer *lexer) {
+    if (*(lexer->cur_tok + 1) == '\0') {
+        return '\0'; // end of string
+    }
+    return *(lexer->cur_tok + 1);
+}
+
 // Free the memory allocated for the lexer
 void free_lexer(Lexer *lexer) {
-    for (size_t i = 0; i < lexer->token_count; i++) {
+    for (int i = 0; i < lexer->token_count; i++) {
         if (lexer->tokens[i].type == tok_identifier || lexer->tokens[i].type == tok_string ||
             lexer->tokens[i].type == tok_number || lexer->tokens[i].type == tok_type || 
             lexer->tokens[i].type == tok_return || lexer->tokens[i].type == tok_func) {
-            free(lexer->tokens[i].val);
+            s_free(lexer->tokens[i].val);
         }
     }
-    free(lexer->tokens);
+    s_free(lexer->tokens);
 }
 
 char *token_to_string(Token token) {
@@ -210,6 +233,8 @@ char *token_to_string(Token token) {
         case tok_star: return "TOK_STAR";
         case tok_slash: return "TOK_SLASH";
         case tok_equal: return "TOK_EQUAL";
+        case tok_equality: return "TOK_EQUALITY";
+        case tok_inequality: return "TOK_INEQUALITY";
         case tok_lessthan: return "TOK_LESSTHAN";
         case tok_greaterthan: return "TOK_GREATERTHAN";
         case tok_period: return "TOK_PERIOD";
@@ -225,6 +250,7 @@ char *token_to_string(Token token) {
         case tok_string: return "TOK_STRING";
         case tok_identifier: return "TOK_IDENTIFIER";
         case tok_number: return "TOK_NUMBER";
+        case tok_colon: return "TOK_COLON";
         default: return "TOK_UNKNOWN";
     }
 }

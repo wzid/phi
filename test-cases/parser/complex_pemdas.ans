@@ -1,0 +1,2 @@
+FuncDeclStmt(main)
+  ReturnStmt(BinaryExpr(BinaryExpr(BinaryExpr(BinaryExpr(IntLiteral(2) - IntLiteral(9)) - IntLiteral(8)) / IntLiteral(3)) * IntLiteral(3)))

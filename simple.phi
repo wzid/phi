@@ -1,0 +1,5 @@
+func area(length: int, width: int): int => length * width;
+
+func main() {
+    return area(20, 10);
+}

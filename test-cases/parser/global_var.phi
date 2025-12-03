@@ -1,0 +1,9 @@
+int x = 2;
+
+func calculate(): int {
+    return x + 5;
+}
+
+func main() {
+    return calculate();
+}

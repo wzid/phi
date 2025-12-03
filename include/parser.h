@@ -8,11 +8,21 @@ typedef struct {
     Lexer *lexer;
     Token cur_tok;
     Token next_tok;
-    int next_tok_index; // technically this is the index of the next token
+    int next_tok_index;
 } Parser;
+
+typedef enum {
+    LOWEST,
+    EQUALITY,    // == or !=
+    LESS_GREATER, // < or >
+    ADD_SUBRACT, // + or -
+    TIMES_DIVIDE_MOD, // * or /
+    PREFIX,      // -X or !X
+    CALL,        // myFunction(X)
+} Precedence;
 
 Parser init_parser(Lexer *lexer);
 
-Program *parse(Parser *parser);
+Program *parse(Parser *this);
 
 #endif

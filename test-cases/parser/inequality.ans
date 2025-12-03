@@ -1,0 +1,2 @@
+FuncDeclStmt(main)
+  ReturnStmt(BinaryExpr(IntLiteral(10) != IntLiteral(14)))

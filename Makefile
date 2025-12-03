@@ -8,7 +8,20 @@ CORE_OBJS  := $(filter-out obj/main.o,$(OBJ_FILES))
 
 TEST_DRIVERS := $(notdir $(wildcard test-cases/*-main.c))
 TEST_NAMES   := $(TEST_DRIVERS:-main.c=)          # foo-main.c → foo
-TEST_BINS    := $(addprefix bin/test-,$(TEST_NAMES))
+TEST_BINS    := $(addprefix test-,$(TEST_NAMES))
+
+BOLD := \033[1m
+RESET := \033[0m
+GREEN := \033[0;32m
+BLUE := \033[0;34m
+
+help: ## Shows all commands
+	@printf "%b\n" "$(BOLD)All Makefile commands:$(RESET)"
+	@printf " %b - builds the main compiler binary\n" "$(GREEN)$(BOLD)make all$(RESET)"
+	@printf " %b - builds all test binaries\n" "$(GREEN)$(BOLD)make test-all$(RESET)"
+	@printf " %b - builds and runs tests for <name> (e.g., lexer, parser)\n" "$(GREEN)$(BOLD)make test-<name>$(RESET)"
+	@printf " %b - removes all build files\n" "$(GREEN)$(BOLD)make clean$(RESET)"
+	@printf " %b - removes all test output files\n" "$(GREEN)$(BOLD)make clean-tests$(RESET)"
 
 obj/%.o: %.c | obj
 	clang -Wall -Wextra $(shell llvm-config --cflags) -I./include -c $< -o $@
@@ -46,5 +59,5 @@ bin obj:
 	@echo "Creating directory $@"
 	mkdir -p $@
 
-.PHONY: all test-all test-% clean
+.PHONY: all test-all test-% clean help
 .PRECIOUS: obj/%.o

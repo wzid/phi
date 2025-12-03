@@ -3,6 +3,7 @@
 
 #include "lexer.h"
 #include "memory.h"
+#include "parser.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -50,14 +51,25 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    for (int i = 0; i < lexer.token_count; i++) {
-        TokenData token = lexer.tokens[i];
+    // for (int i = 0; i < lexer.token_count; i++) {
+    //     TokenData token = lexer.tokens[i];
 
-        if (token.type == tok_identifier || token.type == tok_string || token.type == tok_number || token.type == tok_type) {
-            printf("%s(%s)\n", token_to_string(token.type), token.val);
-        } else {
-            printf("%s\n", token_to_string(token.type));
-        }
+    //     if (token.type == tok_identifier || token.type == tok_string || token.type == tok_number || token.type ==
+    //     tok_type) {
+    //         printf("%s(%s)\n", token_to_string(token.type), token.val);
+    //     } else {
+    //         printf("%s\n", token_to_string(token.type));
+    //     }
+    // }
+    // printf("\n\n");
+
+    Parser parser = init_parser(&lexer);
+
+    Program *prog = parse(&parser);
+
+    for (int i = 0; i < prog->stmt_count; i++) {
+        Stmt *stmt = prog->statements[i];
+        printf("%s\n", stmt_to_string(stmt));
     }
 
     // Free the buffer

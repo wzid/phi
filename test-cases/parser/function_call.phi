@@ -1,0 +1,7 @@
+func calculate(a: int, b: int): int {
+    return a * b;
+}
+
+func main() {
+    return calculate(2, 3);
+}
