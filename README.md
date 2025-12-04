@@ -19,7 +19,27 @@ Watch my devlogs on YouTube [here](https://www.youtube.com/watch?v=QPHYcFLAWoo&l
   - [Cleaning](#cleaning)
   - [Test Structure](#test-structure)
 
-## Language Syntax and Implementation Progress
+## Implementation Progress and Language Syntax
+
+### Progress
+- [x] Working lexer for all future syntax
+- [x] Correct parsing for mathematical expressions
+- [x] Generate LLVM IR from parser
+- [x] Variable declaration
+- [x] Function parsing and implementation
+- [x] Variables are function scoped
+- [x] Global variables
+- [x] Function calls
+- [x] Implicit return function declarations
+- [ ] Variable reassignment
+- [ ] Implement a print function
+- [ ] Implement strings
+- [ ] Implement "if statements"
+- [ ] Implement "for loops" and "while loops"
+- [ ] Include a standard library (especially math)
+#### Maybe?
+- [ ] Allow custom types
+- [ ] Infer return type for implicit return functions
 
 ### Currently Implemented Syntax
 ```
@@ -47,25 +67,6 @@ func main() {
     print(result);
 }
 ```
-
-### Progress
-- [x] Working lexer for all future syntax
-- [x] Correct parsing for mathematical expressions
-- [x] Generate LLVM IR from parser
-- [x] Variable declaration
-- [x] Function parsing and implementation
-- [x] Variables are function scoped
-- [x] Global variables
-- [x] Function calls
-- [x] Implicit return function declarations
-- [ ] Variable reassignment
-- [ ] Implement a print function
-- [ ] Implement strings
-- [ ] Implement "if statements"
-- [ ] Implement "for loops" and "while loops"
-- [ ] Include a standard library (especially math)
-#### Maybe?
-- [ ] Allow custom types
 
 ## Building the Compiler
 
