@@ -5,8 +5,35 @@ The name is inspired from [Euler's totient function](https://en.wikipedia.org/wi
 
 Watch my devlogs on YouTube [here](https://www.youtube.com/watch?v=QPHYcFLAWoo&list=PLEgtx_e7NiZeAXGu8U04pLPKDU5zTNG4M&index=3)!
 
+## Table of Contents
+- [Language Syntax and Implementation Progress](#language-syntax-and-implementation-progress)
+  - [Currently Implemented Syntax](#currently-implemented-syntax)
+  - [Hopeful Syntax](#currently-implemented-syntax)
+  - [Progress](#progress)
+- [Building the Compiler](#building-the-compiler)
+  - [Prerequisites](#prerequisites)
+  - [Build Commands](#build-commands)
+  - [Running the Compiler on a Single File](#running-the-compiler-on-a-single-file)
+  - [Testing Commands](#testing-commands)
+  - [Running Tests on Individual Files](#running-tests-on-individual-files)
+  - [Cleaning](#cleaning)
+  - [Test Structure](#test-structure)
 
-## syntax
+## Language Syntax and Implementation Progress
+
+### Currently Implemented Syntax
+```
+func get_two(): int => 2;
+
+func add_five(a: int): int => a + 5;
+
+func main() {
+    int two = get_two();
+    return add_five(two); // should return 7
+}
+```
+
+### Hopeful Syntax
 ```
 func get_name(): string => "phi";
 
@@ -21,16 +48,38 @@ func main() {
 }
 ```
 
-## Prerequisites
+### Progress
+- [x] Working lexer for all future syntax
+- [x] Correct parsing for mathematical expressions
+- [x] Generate LLVM IR from parser
+- [x] Variable declaration
+- [x] Function parsing and implementation
+- [x] Variables are function scoped
+- [x] Global variables
+- [x] Function calls
+- [x] Implicit return function declarations
+- [ ] Variable reassignment
+- [ ] Implement a print function
+- [ ] Implement strings
+- [ ] Implement "if statements"
+- [ ] Implement "for loops" and "while loops"
+- [ ] Include a standard library (especially math)
+#### Maybe?
+- [ ] Allow custom types
+
+## Building the Compiler
+
+### Prerequisites
 You will need llvm installed along with coreutils on MacOS.
 I forget how to install llvm correctly, it may just be `brew install llvm`
 CoreUtils is `brew install coreutils`
 
-## Build Commands
+### Build Commands
+
+> If you need any help with the commands you can always used `make help` to see all the commands.
 
 The project uses a Makefile to build and test the compiler. Here are the available commands:
 
-### Building the Compiler
 - `make` or `make all` - Builds the main compiler executable (`bin/mycompiler`)
 - `make bin/mycompiler` - Explicitly builds the main compiler
 
