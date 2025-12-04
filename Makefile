@@ -19,7 +19,8 @@ help: ## Shows all commands
 	@printf "%b\n" "$(BOLD)All Makefile commands:$(RESET)"
 	@printf " %b - builds the main compiler binary\n" "$(GREEN)$(BOLD)make all$(RESET)"
 	@printf " %b - builds all test binaries\n" "$(GREEN)$(BOLD)make test-all$(RESET)"
-	@printf " %b - builds and runs tests for <name> (e.g., lexer, parser)\n" "$(GREEN)$(BOLD)make test-<name>$(RESET)"
+	@printf " %b - builds and runs tests for <name> (e.g., all, lexer, parser)\n" "$(GREEN)$(BOLD)make test-<name>$(RESET)"
+	@printf " %b - builds only the test executable for <name> (e.g., lexer, parser)\n" "$(GREEN)$(BOLD)make bin/test-<name>$(RESET)"
 	@printf " %b - removes all build files\n" "$(GREEN)$(BOLD)make clean$(RESET)"
 	@printf " %b - removes all test output files\n" "$(GREEN)$(BOLD)make clean-tests$(RESET)"
 
