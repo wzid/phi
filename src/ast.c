@@ -165,6 +165,24 @@ Stmt* var_decl_stmt(TokenData identifier, Expr* value) {
 }
 
 /**
+ * Creates a variable assignment statement node.
+ * @param identifier The token data for the variable name.
+ * @param modifying_tok The token data for the assignment operator (=, +=, -=, *=, /=).
+ * @param new_value The expression for the new value to assign.
+ * @return Pointer to the created Stmt node (of type VarAssignStmt).
+ */
+Stmt *var_assign_stmt(TokenData identifier, TokenData modifying_tok, Expr* new_value) {
+    Stmt* stmt = (Stmt*)s_malloc(sizeof(Stmt));
+
+    stmt->type = STMT_VAR_ASSIGN;
+    stmt->var_assign.tok_identifier = identifier;
+    stmt->var_assign.modifying_tok = modifying_tok;
+    stmt->var_assign.new_value = new_value;
+
+    return stmt;
+}
+
+/**
  * Creates a return statement node.
  * @param value The expression to return.
  * @return Pointer to the created Stmt node (of type ReturnStmt).
@@ -307,6 +325,12 @@ char* stmt_to_string(Stmt* stmt) {
         case STMT_GLOBAL_VAR_DECL: {
             char* expr_str = expr_to_string(stmt->global_var_decl.value);
             snprintf(buffer, 1024, "GlobalVarDeclStmt(%s = %s)", stmt->global_var_decl.tok_identifier.val, expr_str);
+            s_free(expr_str);
+            return buffer;
+        }
+        case STMT_VAR_ASSIGN: {
+            char* expr_str = expr_to_string(stmt->var_assign.new_value);
+            snprintf(buffer, 1024, "VarAssignStmt(%s %s %s)", stmt->var_assign.tok_identifier.val, stmt->var_assign.modifying_tok.val, expr_str);
             s_free(expr_str);
             return buffer;
         }
