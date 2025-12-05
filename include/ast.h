@@ -81,6 +81,7 @@ struct expr {
 // The type of statement
 typedef enum {
     STMT_VAR_DECL,
+    STMT_VAR_ASSIGN,
     STMT_GLOBAL_VAR_DECL,
     STMT_FUNC_DECL,
     STMT_FUNC_DECL_EXPLICIT,
@@ -112,6 +113,23 @@ typedef struct {
     Expr *value;
 } VarDeclStmt;
 
+/**
+ * Variable assign statement
+ * These need to be statements rather than binary expressions because we don't want them to be used in a nested manner
+ * Assignments are only valid as standalone statements
+ * Example:
+ * - x = 4
+ * - x += 5
+ * - x -= 2
+ * - x /= 3
+ * - x *= 6
+ */
+typedef struct {
+    TokenData tok_identifier;
+    TokenData modifying_tok; // this can be =, +=, -=, *=, or /= 
+    Expr *new_value;
+} VarAssignStmt;
+
 // Variable declaration statement e.g. int x = 42;
 typedef struct {
     TokenData tok_identifier;
@@ -137,6 +155,7 @@ struct stmt {
     union {
         GlobalVarDeclStmt global_var_decl;
         VarDeclStmt var_decl;
+        VarAssignStmt var_assign;
         FuncDeclStmt func_decl;
         ExprStmt expression_stmt;
         ReturnStmt return_stmt;
@@ -165,6 +184,7 @@ Expr *func_call(TokenData tok_function, Expr **args, int arg_count);
 
 Stmt *func_decl_stmt(TokenData identifier, Stmt *body, TokenData return_type, TokenData *parameter_names, TokenData *parameter_types, int parameter_count);
 Stmt *var_decl_stmt(TokenData identifier, Expr *value);
+Stmt *var_assign_stmt(TokenData identifier, TokenData modifying_tok, Expr *new_value);
 Stmt *global_var_decl_stmt(TokenData identifier, Expr *value);
 Stmt *return_stmt(Expr *value);
 Stmt *block_stmt(Stmt **statements, int stmt_count);

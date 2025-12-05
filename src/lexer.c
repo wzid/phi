@@ -37,19 +37,37 @@ int lex(Lexer *lexer) {
                 add_token(lexer, tok_comma, ",");
                 break;
             case '+':
-                add_token(lexer, tok_plus, "+");
+                if (next_char(lexer) == '=') {
+                    lexer->cur_tok++; // skip the next '='
+                    add_token(lexer, tok_plus_equal, "+=");
+                } else {
+                    add_token(lexer, tok_plus, "+");
+                }
                 break;
             case '-':
-                add_token(lexer, tok_minus, "-");
+                if (next_char(lexer) == '=') {
+                    lexer->cur_tok++; // skip the next '='
+                    add_token(lexer, tok_minus_equal, "-=");
+                } else {
+                    add_token(lexer, tok_minus, "-");
+                }
                 break;
             case '*':
-                add_token(lexer, tok_star, "*");
+                if (next_char(lexer) == '=') {
+                    lexer->cur_tok++; // skip the next '='
+                    add_token(lexer, tok_star_equal, "*=");
+                } else {
+                    add_token(lexer, tok_star, "*");
+                }
                 break;
             case '/':
                 if (next_char(lexer) == '/') {
                     // skip the comment (and don't go out of bounds)
                     while (*lexer->cur_tok != '\n' && *lexer->cur_tok != '\0') lexer->cur_tok++;
                     continue;
+                } else if (next_char(lexer) == '=') {
+                    lexer->cur_tok++; // skip the next '='
+                    add_token(lexer, tok_slash_equal, "/=");
                 } else {
                     add_token(lexer, tok_slash, "/");
                 }
@@ -58,6 +76,9 @@ int lex(Lexer *lexer) {
                 if (next_char(lexer) == '=') {
                     lexer->cur_tok++; // skip the next '='
                     add_token(lexer, tok_equality, "==");
+                } else if (next_char(lexer) == '>') {
+                    lexer->cur_tok++; // skip the next '>'
+                    add_token(lexer, tok_arrow, "=>");
                 } else {
                     add_token(lexer, tok_equal, "=");
                 }
@@ -233,6 +254,11 @@ char *token_to_string(Token token) {
         case tok_star: return "TOK_STAR";
         case tok_slash: return "TOK_SLASH";
         case tok_equal: return "TOK_EQUAL";
+        case tok_plus_equal: return "TOK_PLUS_EQUAL";
+        case tok_minus_equal: return "TOK_MINUS_EQUAL";
+        case tok_star_equal: return "TOK_STAR_EQUAL";
+        case tok_slash_equal: return "TOK_SLASH_EQUAL";
+        case tok_arrow: return "TOK_ARROW";
         case tok_equality: return "TOK_EQUALITY";
         case tok_inequality: return "TOK_INEQUALITY";
         case tok_lessthan: return "TOK_LESSTHAN";

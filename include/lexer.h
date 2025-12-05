@@ -14,9 +14,14 @@ typedef enum {
     tok_minus,
     tok_star,
     tok_slash,
-    tok_equal,
-    tok_equality,
-    tok_inequality,
+    tok_equal, // =
+    tok_plus_equal, // +=
+    tok_minus_equal, // -=
+    tok_star_equal, // *=
+    tok_slash_equal, // /=
+    tok_arrow, // =>
+    tok_equality, // ==
+    tok_inequality, // !=
     tok_lessthan,
     tok_greaterthan,
     tok_period,

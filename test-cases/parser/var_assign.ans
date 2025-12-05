@@ -1,0 +1,8 @@
+FuncDeclStmt(main)
+  VarDeclStmt(x = IntLiteral(5))
+  VarAssignStmt(x += IntLiteral(5))
+  VarAssignStmt(x = IntLiteral(10))
+  VarAssignStmt(x -= IntLiteral(5))
+  VarAssignStmt(x *= IntLiteral(5))
+  VarAssignStmt(x /= IntLiteral(5))
+  ReturnStmt(IdentifierExpr(x))

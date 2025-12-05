@@ -417,6 +417,76 @@ int codegen_stmt(CodeGen* this, Stmt* stmt) {
             // Global variable declarations are handled at the module level
             // This is a placeholder to avoid errors
             break;
+        case STMT_VAR_ASSIGN: {
+            // Get the variable's alloca from the symbol table
+            LLVMValueRef local_var_alloca = codegen_get_var(this, stmt->var_assign.tok_identifier.val);
+            LLVMValueRef global_value = NULL;
+            
+            // If not found in symbol table, it might be a global variable
+            if (!local_var_alloca) {
+                global_value = LLVMGetNamedGlobal(this->module, stmt->var_assign.tok_identifier.val);
+            }
+
+            if (!local_var_alloca && !global_value) {
+                fprintf(stderr, "Undefined variable in assignment: %s\n", stmt->var_assign.tok_identifier.val);
+                return 0;
+            }
+
+            // Generate code for the value to assign
+            LLVMValueRef value = codegen_expr(this, stmt->var_assign.new_value);
+
+            // Simple assignment
+            if (stmt->var_assign.modifying_tok.type == tok_equal) {
+                if (local_var_alloca) {
+                    LLVMBuildStore(this->builder, value, local_var_alloca);
+                } else if (global_value) {
+                    LLVMBuildStore(this->builder, value, global_value);
+                }
+                break;
+            }
+            LLVMTypeRef elemType = NULL;
+            LLVMValueRef current_val = NULL;
+            
+            if (local_var_alloca) {
+                elemType = LLVMGetAllocatedType(local_var_alloca);
+                current_val = LLVMBuildLoad2(this->builder, elemType, local_var_alloca, "loadtmp");
+            } else if (global_value) {
+                elemType = LLVMGlobalGetValueType(global_value);
+                current_val = LLVMBuildLoad2(this->builder, elemType, global_value, "loadtmp");
+            }
+
+
+            LLVMValueRef value_to_use = local_var_alloca ? local_var_alloca : global_value;            
+
+            // Otherwise store the value into the variable's alloca based on the modifying token
+            switch (stmt->var_assign.modifying_tok.type) {
+                case tok_plus_equal: {
+                    LLVMValueRef new_val = LLVMBuildAdd(this->builder, current_val, value, "addtmp");
+                    LLVMBuildStore(this->builder, new_val, value_to_use);
+                    break;
+                }
+                case tok_minus_equal: {
+                    LLVMValueRef new_val = LLVMBuildSub(this->builder, current_val, value, "subtmp");
+                    LLVMBuildStore(this->builder, new_val, value_to_use);
+                    break;
+                }
+                case tok_star_equal: {
+                    LLVMValueRef new_val = LLVMBuildMul(this->builder, current_val, value, "multmp");
+                    LLVMBuildStore(this->builder, new_val, value_to_use);
+                    break;
+                }
+                case tok_slash_equal: {
+                    LLVMValueRef new_val = LLVMBuildSDiv(this->builder, current_val, value, "divtmp");
+                    LLVMBuildStore(this->builder, new_val, value_to_use);
+                    break;
+                }
+                default:
+                    fprintf(stderr, "Unknown assignment operator\n");
+                    return 0;
+            }
+
+            break;   
+        }
         default:
             fprintf(stderr, "Unknown statement type\n");
             break;

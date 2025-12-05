@@ -32,6 +32,7 @@ Watch my devlogs on YouTube [here](https://www.youtube.com/watch?v=QPHYcFLAWoo&l
 - [x] Function calls
 - [x] Implicit return function declarations
 - [ ] Variable reassignment
+- [ ] Variable increment operators
 - [ ] Implement a print function
 - [ ] Implement strings
 - [ ] Implement "if statements"

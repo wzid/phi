@@ -17,6 +17,7 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count);
 static Stmt *parse_func_decl(Parser *this);
 static Stmt *parse_global_var_decl(Parser *this);
 static Stmt *parse_var_decl(Parser *this);
+static Stmt *parse_var_assign(Parser *this);
 static Stmt *parse_return(Parser *this);
 static Stmt *parse_expression_stmt(Parser *this);
 
@@ -199,10 +200,9 @@ static Stmt *parse_func_decl(Parser *this) {
 
     // implicit return function
     // the syntax is func name(params):return_type => expression;
-    if (peek(this) == tok_equal) {
-        consume(this); // consume '=' token
-        expect_next_and_consume_current(this, tok_greaterthan);
-        consume(this); // consume '>' token
+    if (peek(this) == tok_arrow) {
+        expect_next_and_consume_current(this, tok_arrow);
+        consume(this); // consume '=>' token
         Expr *return_expr = parse_expression(this, LOWEST);
         expect_next_and_consume_current(this, tok_semi);
         consume(this); // consume ';' token
@@ -252,6 +252,13 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
             case tok_return:
                 stmt = parse_return(this);
                 break;
+            case tok_identifier:
+                if (peek(this) == tok_lparen) {
+                    stmt = parse_expression_stmt(this);
+                } else {
+                    stmt = parse_var_assign(this);
+                }
+                break;
             default:
                 stmt = parse_expression_stmt(this);
                 break;
@@ -294,6 +301,30 @@ static Stmt *parse_global_var_decl(Parser *this) {
     // this also should work because they have the same struct layout as regular var decls
     var_decl->type = STMT_GLOBAL_VAR_DECL;
     return var_decl;
+}
+
+static Stmt *parse_var_assign(Parser *this) {
+    TokenData identifier = curr_token_data(this);
+    consume(this);
+
+    // if it is not an assignment operator, throw an error
+    if (this->cur_tok != tok_equal && this->cur_tok != tok_plus_equal && this->cur_tok != tok_minus_equal &&
+        this->cur_tok != tok_star_equal && this->cur_tok != tok_slash_equal) {
+        Location loc = next_token_data(this).loc;
+        fprintf(stderr, "(%zu:%zu) Expected assignment operator after identifier, got %s\n", loc.line, loc.col,
+                token_to_string(this->next_tok));
+        exit(1);
+    }
+
+    TokenData modifying_tok = curr_token_data(this);
+    consume(this); // consume the assignment operator
+
+    Expr *new_value = parse_expression(this, LOWEST);
+
+    expect_next_and_consume_current(this, tok_semi);  // expect a semicolon after the expression
+    consume(this); // consume the semicolon
+
+    return var_assign_stmt(identifier, modifying_tok, new_value);
 }
 
 static Stmt *parse_return(Parser *this) {
