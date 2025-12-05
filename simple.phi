@@ -1,5 +1,6 @@
-func area(length: int, width: int): int => length * width;
+int x = 5;
 
 func main() {
-    return area(20, 10);
+    x += 10;
+    return x;
 }
