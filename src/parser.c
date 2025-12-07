@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define true 1
+#define false 0
+
 static void consume(Parser *this);
 static Token peek(Parser *this);
 static TokenData curr_token_data(Parser *this);
@@ -253,7 +256,7 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
                     stmt = parse_expression_stmt(this);
                 } else if (peek(this) == tok_increment || peek(this) == tok_decrement) {
                     // postfix operator
-                    stmt = expression_stmt(parse_increment_expr(this, 0));
+                    stmt = expression_stmt(parse_increment_expr(this, false));
                 } else {
                     stmt = parse_var_assign(this);
                 }
@@ -261,7 +264,7 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
             // prefix increment/decrement operators
             case tok_increment:
             case tok_decrement:
-                stmt = expression_stmt(parse_increment_expr(this, 1));
+                stmt = expression_stmt(parse_increment_expr(this, true));
                 break;
             default:
                 stmt = parse_expression_stmt(this);
@@ -391,17 +394,10 @@ static Expr *parse_function_call(Parser *this) {
 }
 
 static Expr *parse_increment_expr(Parser *this, int is_prefix) {
-    if (is_prefix) {
-        TokenData op_token = curr_token_data(this);
-        consume(this);
-        TokenData identifier = curr_token_data(this);
-        return increment_expr(op_token, identifier, is_prefix);
-    } else {
-        TokenData identifier = curr_token_data(this);
-        consume(this);
-        TokenData op_token = curr_token_data(this);
-        return increment_expr(op_token, identifier, is_prefix);
-    }
+    TokenData op_token = is_prefix ? curr_token_data(this) : next_token_data(this);
+    TokenData identifier = is_prefix ? next_token_data(this) : curr_token_data(this);
+    consume(this); // consume current token so that we move past the operator/identifier and the next_tok is another expression
+    return increment_expr(op_token, identifier, is_prefix);
 }
 
 static Expr *parse_expression(Parser *this, Precedence precedence) {
@@ -438,7 +434,7 @@ static Expr *parse_prefix(Parser *this) {
             return expr;
         case tok_increment:
         case tok_decrement:
-            return parse_increment_expr(this, 1);
+            return parse_increment_expr(this, true);
         default:
             fprintf(stderr, "Unknown prefix token: %s\n", token_to_string(this->cur_tok));
             exit(1);
