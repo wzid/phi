@@ -1,0 +1,4 @@
+FuncDeclStmt(main)
+  VarDeclStmt(x = IntLiteral(4))
+  VarDeclStmt(z = BinaryExpr(IntLiteral(5) + IncrementExpr(x++)))
+  ReturnStmt(BinaryExpr(IdentifierExpr(z) + IdentifierExpr(x)))

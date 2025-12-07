@@ -1,0 +1,3 @@
+FuncDeclStmt(main)
+  VarDeclStmt(x = IntLiteral(0))
+  ReturnStmt(IncrementExpr(x--))

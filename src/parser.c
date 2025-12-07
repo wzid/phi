@@ -23,6 +23,7 @@ static Stmt *parse_expression_stmt(Parser *this);
 
 static void parse_function_parameters(Parser *this, TokenData** out_parameter_names, TokenData** out_parameter_types, int *out_param_count);
 
+static Expr *parse_increment_expr(Parser *this, int is_prefix);
 static Expr **parse_function_arguments(Parser *this, int *out_arg_count);
 static Expr *parse_function_call(Parser *this);
 static Expr *parse_expression(Parser *this, Precedence precedence);
@@ -121,12 +122,7 @@ static Stmt *parse_expression_stmt(Parser *this) {
     expect_next_and_consume_current(this, tok_semi);
     consume(this);
 
-    // create expression statement
-    Stmt *stmt = (Stmt *)s_malloc(sizeof(Stmt));
-    stmt->type = STMT_EXPR;
-    stmt->expression_stmt.value = expr;
-
-    return stmt;
+    return expression_stmt(expr);
 }
 
 
@@ -255,9 +251,17 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
             case tok_identifier:
                 if (peek(this) == tok_lparen) {
                     stmt = parse_expression_stmt(this);
+                } else if (peek(this) == tok_increment || peek(this) == tok_decrement) {
+                    // postfix operator
+                    stmt = expression_stmt(parse_increment_expr(this, 0));
                 } else {
                     stmt = parse_var_assign(this);
                 }
+                break;
+            // prefix increment/decrement operators
+            case tok_increment:
+            case tok_decrement:
+                stmt = expression_stmt(parse_increment_expr(this, 1));
                 break;
             default:
                 stmt = parse_expression_stmt(this);
@@ -386,6 +390,20 @@ static Expr *parse_function_call(Parser *this) {
     }
 }
 
+static Expr *parse_increment_expr(Parser *this, int is_prefix) {
+    if (is_prefix) {
+        TokenData op_token = curr_token_data(this);
+        consume(this);
+        TokenData identifier = curr_token_data(this);
+        return increment_expr(op_token, identifier, is_prefix);
+    } else {
+        TokenData identifier = curr_token_data(this);
+        consume(this);
+        TokenData op_token = curr_token_data(this);
+        return increment_expr(op_token, identifier, is_prefix);
+    }
+}
+
 static Expr *parse_expression(Parser *this, Precedence precedence) {
     Expr *left = parse_prefix(this);
 
@@ -418,6 +436,9 @@ static Expr *parse_prefix(Parser *this) {
             expect_next(this, tok_rparen);  // error out if we don't have a closing parenthesis
             consume(this);                  // consume the closing parenthesis
             return expr;
+        case tok_increment:
+        case tok_decrement:
+            return parse_increment_expr(this, 1);
         default:
             fprintf(stderr, "Unknown prefix token: %s\n", token_to_string(this->cur_tok));
             exit(1);
@@ -448,8 +469,15 @@ static Expr *parse_infix(Parser *this, Expr *left) {
         // and we can get that using the curr_token_data function
         case tok_lparen:
             return parse_function_call(this);
+        case tok_increment:
+        case tok_decrement:
+            if (this->cur_tok != tok_identifier) {
+                fprintf(stderr, "Expected identifier before increment/decrement operator\n");
+                exit(1);
+            }
+            return parse_increment_expr(this, 0);
         default:
-            return NULL; // TODO: handle other infix expressions like function calls
+            return NULL; 
     }
 }
 
@@ -476,6 +504,8 @@ Precedence get_precedence(Token token) {
         case tok_mod:
             return TIMES_DIVIDE_MOD;
         case tok_not:  // Maybe remove this?
+        case tok_increment:
+        case tok_decrement:
             return PREFIX;
         case tok_lparen:  // Function call
             return CALL;
