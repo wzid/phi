@@ -211,6 +211,43 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
                     return NULL;
             }
         }
+        case EXPR_INCREMENT: {
+            LLVMValueRef var_alloca = codegen_get_var(this, expr->increment.identifier.val);
+            LLVMValueRef global_var = NULL;
+            if (!var_alloca) {
+                global_var = LLVMGetNamedGlobal(this->module, expr->increment.identifier.val);
+            }
+            if (!var_alloca && !global_var) {
+                fprintf(stderr, "Undefined variable in increment: %s\n", expr->increment.identifier.val);
+                return NULL;
+            }
+
+            LLVMTypeRef elemType = var_alloca ? LLVMGetAllocatedType(var_alloca) : LLVMGlobalGetValueType(global_var);
+            LLVMValueRef ptr = var_alloca ? var_alloca : global_var;
+            LLVMValueRef current_val = LLVMBuildLoad2(this->builder, elemType, ptr, "loadtmp");
+            LLVMValueRef one = LLVMConstInt(elemType, 1, 0);
+
+            LLVMValueRef new_val = NULL;
+            if (expr->increment.op_token.type == tok_increment) {
+                new_val = LLVMBuildAdd(this->builder, current_val, one, "inctmp");
+            } else if (expr->increment.op_token.type == tok_decrement) {
+                new_val = LLVMBuildSub(this->builder, current_val, one, "dectmp");
+            } else {
+                fprintf(stderr, "Unknown increment operator\n");
+                return NULL;
+            }
+
+            LLVMBuildStore(this->builder, new_val, ptr);
+
+            // Handle prefix vs postfix
+            if (expr->increment.is_prefix) {
+                // Prefix: return new value
+                return new_val;
+            } else {
+                // Postfix: return original value
+                return current_val;
+            }
+        }
 
         case EXPR_UNARY: {
             // Generate code for the right expression
