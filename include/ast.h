@@ -12,6 +12,7 @@ typedef struct stmt Stmt;
 typedef enum {
     EXPR_BINARY,
     EXPR_UNARY,
+    EXPR_INCREMENT,
     EXPR_IDENTIFIER,
     EXPR_LITERAL_INT,
     EXPR_LITERAL_STRING,
@@ -31,6 +32,13 @@ typedef struct {
     TokenData op_token;
     Expr *right;
 } UnaryExpr;
+
+// Increment expression e.g. ++x, --x, x++, x--
+typedef struct {
+    TokenData op_token;
+    TokenData identifier;
+    int is_prefix; // 1 if prefix (e.g. ++x), 0 if postfix (e.g. x++)
+} IncrementExpr;
 
 // Identifier expression e.g. variable names or function names
 typedef struct {
@@ -67,6 +75,7 @@ struct expr {
     union {
         BinaryExpr binary;
         UnaryExpr unary;
+        IncrementExpr increment;
         IdentifierExpr identifier;
         IntLiteral int_literal;
         StringLiteral str_literal;
@@ -176,6 +185,7 @@ typedef struct {
 
 Expr *binary_expr(Expr *left, TokenData op, Expr *right);
 Expr *unary_expr(TokenData op, Expr *right);
+Expr *increment_expr(TokenData op_token, TokenData identifier, int is_prefix);
 Expr *identifier_expr(TokenData identifier);
 Expr *int_literal(char *value);
 Expr *string_literal(char *value);
@@ -187,6 +197,7 @@ Stmt *var_decl_stmt(TokenData identifier, Expr *value);
 Stmt *var_assign_stmt(TokenData identifier, TokenData modifying_tok, Expr *new_value);
 Stmt *global_var_decl_stmt(TokenData identifier, Expr *value);
 Stmt *return_stmt(Expr *value);
+Stmt *expression_stmt(Expr *expr);
 Stmt *block_stmt(Stmt **statements, int stmt_count);
 
 void free_program(Program *prog);
