@@ -41,6 +41,23 @@ Expr* unary_expr(TokenData op, Expr* right) {
 }
 
 /**
+ * Creates an increment expression node.
+ * @param op_token The operator token data. (++ or --)
+ * @param identifier The identifier token data.
+ * @param is_prefix 1 if prefix (e.g. ++x), 0 if postfix (e.g. x++).
+ */
+Expr *increment_expr(TokenData op_token, TokenData identifier, int is_prefix) {
+    Expr* expr = (Expr*)s_malloc(sizeof(Expr));
+
+    expr->type = EXPR_INCREMENT;
+    expr->increment.op_token = op_token;
+    expr->increment.identifier = identifier;
+    expr->increment.is_prefix = is_prefix;
+
+    return expr;
+}
+
+/**
  * Creates an identifier expression node.
  * @param identifier The token data for the identifier.
  * @return Pointer to the created Expr node (of type IdentifierExpr).
@@ -197,6 +214,20 @@ Stmt* return_stmt(Expr* value) {
 }
 
 /**
+ * Creates an expression statement node.
+ * @param expr The expression contained in the statement.
+ * @return Pointer to the created Stmt node (of type ExprStmt).
+ */
+Stmt *expression_stmt(Expr *expr) {
+    Stmt* stmt = (Stmt*)s_malloc(sizeof(Stmt));
+
+    stmt->type = STMT_EXPR;
+    stmt->expression_stmt.value = expr;
+
+    return stmt;
+}
+
+/**
  * Creates a block statement node.
  * @param statements Array of statement pointers in the block.
  * @param stmt_count Number of statements in the block.
@@ -242,6 +273,13 @@ char* expr_to_string(Expr* expr) {
             s_free(right_str);
             return buffer;
         }
+        case EXPR_INCREMENT:
+            if (expr->increment.is_prefix) {
+                snprintf(buffer, 512, "IncrementExpr(%s%s)", expr->increment.op_token.val, expr->increment.identifier.val);
+            } else {
+                snprintf(buffer, 512, "IncrementExpr(%s%s)", expr->increment.identifier.val, expr->increment.op_token.val);
+            }
+            return buffer;
         case EXPR_UNARY: {
             char* right_str = expr_to_string(expr->unary.right);
             snprintf(buffer, 512, "UnaryExpr(%s %s)", expr->unary.op_token.val, right_str);

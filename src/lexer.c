@@ -40,6 +40,9 @@ int lex(Lexer *lexer) {
                 if (next_char(lexer) == '=') {
                     lexer->cur_tok++; // skip the next '='
                     add_token(lexer, tok_plus_equal, "+=");
+                } else if (next_char(lexer) == '+') {
+                    lexer->cur_tok++; // skip the next '+'
+                    add_token(lexer, tok_increment, "++");
                 } else {
                     add_token(lexer, tok_plus, "+");
                 }
@@ -48,6 +51,9 @@ int lex(Lexer *lexer) {
                 if (next_char(lexer) == '=') {
                     lexer->cur_tok++; // skip the next '='
                     add_token(lexer, tok_minus_equal, "-=");
+                } else if (next_char(lexer) == '-') {
+                    lexer->cur_tok++; // skip the next '-'
+                    add_token(lexer, tok_decrement, "--");
                 } else {
                     add_token(lexer, tok_minus, "-");
                 }
@@ -250,7 +256,9 @@ char *token_to_string(Token token) {
         case tok_rbrace: return "TOK_RBRACE";
         case tok_comma: return "TOK_COMMA";
         case tok_plus: return "TOK_PLUS";
+        case tok_increment: return "TOK_INCREMENT";
         case tok_minus: return "TOK_MINUS";
+        case tok_decrement: return "TOK_DECREMENT";
         case tok_star: return "TOK_STAR";
         case tok_slash: return "TOK_SLASH";
         case tok_equal: return "TOK_EQUAL";

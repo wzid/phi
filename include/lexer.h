@@ -11,7 +11,9 @@ typedef enum {
     tok_rbrace,
     tok_comma,
     tok_plus,
+    tok_increment, // ++
     tok_minus,
+    tok_decrement, // --
     tok_star,
     tok_slash,
     tok_equal, // =
