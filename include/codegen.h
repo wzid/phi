@@ -31,5 +31,7 @@ int codegen_stmt(CodeGen *this, Stmt *stmt);
 void dump_ir(CodeGen *this);
 void write_bitcode(CodeGen *this, const char *filename);
 int run_jit(CodeGen *this);
+void setup_stdlib(CodeGen *this);
+LLVMValueRef handle_stdlib_call(CodeGen *this, const char *func_name, Expr **args);
 
 #endif

@@ -2,5 +2,6 @@ int x = 4;
 
 func main() {
     int z = 5 + x++;
+    printf(z);
     return z + x; // should be 14
 }

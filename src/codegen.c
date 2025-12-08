@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "memory.h"
+#include "std_lib.h"
 
 // helper: simple dynamic symbol table
 static void ensure_var_capacity(CodeGen* this) {
@@ -145,6 +146,9 @@ LLVMValueRef codegen_program(CodeGen* this, Program* program) {
         }
     }
 
+    // Add functions from standard library
+    setup_stdlib(this);
+
     // 2) Generate code for all statements
     for (int i = 0; i < program->stmt_count; i++) {
         Stmt* stmt = program->statements[i];
@@ -281,6 +285,13 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
             return NULL;
 
         case EXPR_FUNC_CALL: {
+            // Check if it's a standard library function
+            for (int i = 0; stdlib_functions[i] != NULL; i++) {
+                if (strcmp(expr->func_call.tok_function.val, stdlib_functions[i]) == 0) {
+                    return handle_stdlib_call(this, expr->func_call.tok_function.val, expr->func_call.args);
+                }
+            }
+
             LLVMValueRef callee = LLVMGetNamedFunction(this->module, expr->func_call.tok_function.val);
             if (!callee) {
                 fprintf(stderr, "Undefined function: %s\n", expr->func_call.tok_function.val);
@@ -566,4 +577,20 @@ int run_jit(CodeGen* this) {
 
     LLVMDisposeGenericValue(result);
     return return_value;
+}
+
+void setup_stdlib(CodeGen* this) {
+    setup_printf(this);
+    setup_pow(this);
+}
+
+LLVMValueRef handle_stdlib_call(CodeGen* this, const char* func_name, Expr** args) {
+    if (strcmp(func_name, "printf") == 0) {
+        return call_printf(this, args);
+    } else if (strcmp(func_name, "pow") == 0) {
+        return call_pow(this, args);
+    } else {
+        fprintf(stderr, "Unknown standard library function: %s\n", func_name);
+        return NULL;
+    }
 }
