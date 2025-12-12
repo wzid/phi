@@ -34,7 +34,7 @@ Watch my devlogs on YouTube [here](https://www.youtube.com/watch?v=QPHYcFLAWoo&l
 - [x] Variable reassignment
 - [x] Variable increment operators
 - [x] Implement a print function
-- [ ] Implement strings
+- [x] Implement strings
 - [ ] Implement "if statements"
 - [ ] Implement "for loops" and "while loops"
 - [ ] Include a standard library (especially math)
