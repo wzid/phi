@@ -118,6 +118,7 @@ typedef struct {
 
 // Variable declaration statement e.g. int x = 42;
 typedef struct {
+    TokenData type;
     TokenData tok_identifier;
     Expr *value;
 } VarDeclStmt;
@@ -141,6 +142,7 @@ typedef struct {
 
 // Variable declaration statement e.g. int x = 42;
 typedef struct {
+    TokenData type;
     TokenData tok_identifier;
     Expr *value;
 } GlobalVarDeclStmt;
@@ -193,9 +195,9 @@ Expr *bool_literal(int value);
 Expr *func_call(TokenData tok_function, Expr **args, int arg_count);
 
 Stmt *func_decl_stmt(TokenData identifier, Stmt *body, TokenData return_type, TokenData *parameter_names, TokenData *parameter_types, int parameter_count);
-Stmt *var_decl_stmt(TokenData identifier, Expr *value);
+Stmt *var_decl_stmt(TokenData type, TokenData identifier, Expr *value);
 Stmt *var_assign_stmt(TokenData identifier, TokenData modifying_tok, Expr *new_value);
-Stmt *global_var_decl_stmt(TokenData identifier, Expr *value);
+Stmt *global_var_decl_stmt(TokenData type, TokenData identifier, Expr *value);
 Stmt *return_stmt(Expr *value);
 Stmt *expression_stmt(Expr *expr);
 Stmt *block_stmt(Stmt **statements, int stmt_count);

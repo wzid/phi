@@ -284,6 +284,7 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
 }
 
 static Stmt *parse_var_decl(Parser *this) {
+    TokenData type = curr_token_data(this);
     // variable declarations are formed as: type identifier = expression;
     // advance past 'int' keyword
     consume(this);
@@ -299,7 +300,7 @@ static Stmt *parse_var_decl(Parser *this) {
     // consume the semicolon
     consume(this);
 
-    return var_decl_stmt(identifier, value);
+    return var_decl_stmt(type, identifier, value);
 }
 
 static Stmt *parse_global_var_decl(Parser *this) {
@@ -435,6 +436,8 @@ static Expr *parse_prefix(Parser *this) {
         case tok_increment:
         case tok_decrement:
             return parse_increment_expr(this, true);
+        case tok_string:
+            return string_literal(curr_token_data(this).val);
         default:
             fprintf(stderr, "Unknown prefix token: %s\n", token_to_string(this->cur_tok));
             exit(1);
