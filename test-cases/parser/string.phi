@@ -1,0 +1,5 @@
+func main() {
+    string name = "cameron";
+    printf(name);
+    return 0;
+}

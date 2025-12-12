@@ -1,5 +1,5 @@
 FuncDeclStmt(getTwo)
   ReturnStmt(IntLiteral(2))
 FuncDeclStmt(main)
-  VarDeclStmt(two = FuncCallExpr(getTwo))
+  VarDeclStmt(int two = FuncCallExpr(getTwo))
   ReturnStmt(BinaryExpr(IdentifierExpr(two) + IntLiteral(2)))
