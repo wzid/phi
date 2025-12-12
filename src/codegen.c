@@ -447,7 +447,7 @@ int codegen_stmt(CodeGen* this, Stmt* stmt) {
             }
 
             LLVMTypeRef var_type = LLVMTypeOf(init_val);
-            printf("Variable \"%s\" has type: %s\n", stmt->var_decl.tok_identifier.val, LLVMPrintTypeToString(var_type));
+            // printf("Variable \"%s\" has type: %s\n", stmt->var_decl.tok_identifier.val, LLVMPrintTypeToString(var_type));
             LLVMValueRef alloca = LLVMBuildAlloca(tmp_builder, var_type, stmt->var_decl.tok_identifier.val);
             
             LLVMDisposeBuilder(tmp_builder);
@@ -549,9 +549,12 @@ void dump_ir(CodeGen* this) {
     LLVMDisposeMessage(ir);
 }
 
-void write_bitcode(CodeGen* this, const char* filename) {
-    if (LLVMWriteBitcodeToFile(this->module, filename) != 0) {
-        fprintf(stderr, "Error writing bitcode to file %s\n", filename);
+void write_ir(CodeGen* this, const char* filename) {
+    // Write the LLVM IR (human-readable .ll file)
+    char* error = NULL;
+    if (LLVMPrintModuleToFile(this->module, filename, &error) != 0) {
+        fprintf(stderr, "Error writing LLVM IR to file %s: %s\n", filename, error);
+        LLVMDisposeMessage(error);
     }
 }
 
@@ -581,15 +584,16 @@ int run_jit(CodeGen* this) {
 
 void setup_stdlib(CodeGen* this) {
     setup_printf(this);
-    setup_pow(this);
+    // setup_pow(this);
 }
 
 LLVMValueRef handle_stdlib_call(CodeGen* this, const char* func_name, Expr** args) {
     if (strcmp(func_name, "printf") == 0) {
         return call_printf(this, args);
-    } else if (strcmp(func_name, "pow") == 0) {
+    }/* else if (strcmp(func_name, "pow") == 0) {
         return call_pow(this, args);
-    } else {
+    }*/
+     else {
         fprintf(stderr, "Unknown standard library function: %s\n", func_name);
         return NULL;
     }
