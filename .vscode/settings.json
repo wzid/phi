@@ -19,6 +19,7 @@
         "analysis.h": "c",
         "target.h": "c",
         "memory.h": "c",
-        "bitwriter.h": "c"
+        "bitwriter.h": "c",
+        "std_lib.h": "c"
     }
 }

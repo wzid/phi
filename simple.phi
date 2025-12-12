@@ -1,6 +1,7 @@
 int x = 4;
 
 func main() {
-    int z = 5 + x++;
-    return z + x; // should be 14
+    int z = 5 * 5;
+    printf(z);
+    return 0;
 }
