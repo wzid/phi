@@ -10,6 +10,7 @@
 static void add_token(Lexer *lexer, Token type, char *val);
 static void handle_identifier(Lexer *lexer);
 static char next_char(Lexer *lexer);
+static char *unescape_string(const char *str, size_t len);
 
 int lex(Lexer *lexer) {
     while (*lexer->cur_tok != '\0') {
@@ -138,12 +139,8 @@ int lex(Lexer *lexer) {
                         return 1;
                     }
                     
-
                     int str_len = lexer->cur_tok - str_start;
-                    char *string = (char *)s_malloc(str_len + 1);
-
-                    strncpy(string, str_start, str_len);
-                    string[str_len] = '\0';
+                    char *string = unescape_string(str_start, str_len);
 
                     add_token(lexer, tok_string, string);
                     // we don't continue here so we can skip the closing quote
@@ -287,4 +284,28 @@ char *token_to_string(Token token) {
         case tok_colon: return "TOK_COLON";
         default: return "TOK_UNKNOWN";
     }
+}
+
+static char* unescape_string(const char *str, size_t len) {
+    char *result = (char *)s_malloc(len + 1); // worst case, no escapes
+    size_t res_i = 0;
+
+    for (size_t i = 0; i < len; i++) {
+        if (str[i] == '\\' && i + 1 < len) {
+            i++;
+            switch (str[i]) {
+                case 'n': result[res_i++] = '\n'; break;
+                case 't': result[res_i++] = '\t'; break;
+                case 'r': result[res_i++] = '\r'; break;
+                case '\\': result[res_i++] = '\\'; break;
+                case '"': result[res_i++] = '"'; break;
+                default: result[res_i++] = str[i]; break; // unknown escape, keep as is
+            }
+        } else {
+            result[res_i++] = str[i];
+        }
+    }
+
+    result[res_i] = '\0';
+    return result;
 }
