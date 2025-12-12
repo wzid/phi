@@ -1,4 +1,4 @@
-GlobalVarDeclStmt(x = IntLiteral(2))
+GlobalVarDeclStmt(int x = IntLiteral(2))
 FuncDeclStmt(calculate)
   ReturnStmt(BinaryExpr(IdentifierExpr(x) + IntLiteral(5)))
 FuncDeclStmt(main)

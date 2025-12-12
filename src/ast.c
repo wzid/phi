@@ -155,10 +155,19 @@ Stmt* func_decl_stmt(TokenData identifier, Stmt* body, TokenData return_type, To
     return stmt;
 }
 
-Stmt *global_var_decl_stmt(TokenData identifier, Expr* value) {
+/**
+ * Currently this function is UNUSED
+ * Creates a global variable declaration statement node.
+ * @param type The type of the variable (string or int)
+ * @param identifier The token data for the variable name.
+ * @param value The expression for the variable's initial value.
+ * @return Pointer to the created Stmt node (of type GlobalVarDeclStmt).
+ */
+Stmt *global_var_decl_stmt(TokenData type, TokenData identifier, Expr* value) {
     Stmt* stmt = (Stmt*)s_malloc(sizeof(Stmt));
 
     stmt->type = STMT_GLOBAL_VAR_DECL;
+    stmt->global_var_decl.type = type;
     stmt->global_var_decl.tok_identifier = identifier;
     stmt->global_var_decl.value = value;
 
@@ -167,14 +176,16 @@ Stmt *global_var_decl_stmt(TokenData identifier, Expr* value) {
 
 /**
  * Creates a variable declaration statement node.
+ * @param type The type of the variable (string or int)
  * @param identifier The token data for the variable name.
  * @param value The expression for the variable's initial value.
  * @return Pointer to the created Stmt node (of type VarDeclStmt).
  */
-Stmt* var_decl_stmt(TokenData identifier, Expr* value) {
+Stmt* var_decl_stmt(TokenData type, TokenData identifier, Expr* value) {
     Stmt* stmt = (Stmt*)s_malloc(sizeof(Stmt));
 
     stmt->type = STMT_VAR_DECL;
+    stmt->var_decl.type = type;
     stmt->var_decl.tok_identifier = identifier;
     stmt->var_decl.value = value;
 
@@ -356,13 +367,13 @@ char* stmt_to_string(Stmt* stmt) {
         }
         case STMT_VAR_DECL: {
             char* expr_str = expr_to_string(stmt->var_decl.value);
-            snprintf(buffer, 1024, "VarDeclStmt(%s = %s)", stmt->var_decl.tok_identifier.val, expr_str);
+            snprintf(buffer, 1024, "VarDeclStmt(%s %s = %s)", stmt->var_decl.type.val, stmt->var_decl.tok_identifier.val, expr_str);
             s_free(expr_str);
             return buffer;
         }
         case STMT_GLOBAL_VAR_DECL: {
             char* expr_str = expr_to_string(stmt->global_var_decl.value);
-            snprintf(buffer, 1024, "GlobalVarDeclStmt(%s = %s)", stmt->global_var_decl.tok_identifier.val, expr_str);
+            snprintf(buffer, 1024, "GlobalVarDeclStmt(%s %s = %s)", stmt->var_decl.type.val, stmt->global_var_decl.tok_identifier.val, expr_str);
             s_free(expr_str);
             return buffer;
         }

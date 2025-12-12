@@ -1,6 +1,6 @@
 FuncDeclStmt(calc)
   ReturnStmt(BinaryExpr(IntLiteral(2) + IntLiteral(2)))
 FuncDeclStmt(main)
-  VarDeclStmt(xresult = IntLiteral(1000))
-  VarDeclStmt(george = IntLiteral(90))
+  VarDeclStmt(int xresult = IntLiteral(1000))
+  VarDeclStmt(int george = IntLiteral(90))
   ReturnStmt(BinaryExpr(BinaryExpr(IdentifierExpr(george) + IdentifierExpr(xresult)) * IdentifierExpr(xresult)))

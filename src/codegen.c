@@ -94,6 +94,10 @@ LLVMTypeRef get_function_type(CodeGen* this, FuncDeclStmt* func_decl) {
     // if the return type is 'int' or if the function is 'main', return int
     if ((return_type.val && strcmp(return_type.val, "int") == 0) || strcmp(func_decl->tok_identifier.val, "main") == 0) {
         ret_type = LLVMInt32TypeInContext(this->context);
+    } else if (return_type.val && strcmp(return_type.val, "bool") == 0) {
+        ret_type = LLVMInt1TypeInContext(this->context);
+    } else if (return_type.val && strcmp(return_type.val, "string") == 0) {
+        ret_type = LLVMPointerType(LLVMInt8TypeInContext(this->context), 0);
     }
 
     if (func_decl->parameter_count > 0) {
@@ -134,7 +138,7 @@ LLVMValueRef codegen_program(CodeGen* this, Program* program) {
                 GlobalVarDeclStmt *global_var_decl = &stmt->global_var_decl;
 
                 // For simplicity, we only handle 'int' type globals for now
-                LLVMTypeRef var_type = LLVMInt32TypeInContext(this->context);
+                LLVMTypeRef var_type = get_type(global_var_decl->type, this->context);
                 LLVMValueRef global_var = LLVMAddGlobal(this->module, var_type, global_var_decl->tok_identifier.val);
                 LLVMValueRef init_val = codegen_expr(this, global_var_decl->value);
                 LLVMSetInitializer(global_var, init_val);
@@ -280,10 +284,7 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
             return LLVMConstInt(bool_type, expr->bool_literal.value, 0);
         }
         case EXPR_LITERAL_STRING:
-            // String literals would need more complex handling
-            fprintf(stderr, "String literals not yet implemented\n");
-            return NULL;
-
+            return LLVMBuildGlobalStringPtr(this->builder, expr->str_literal.value, "strtmp");
         case EXPR_FUNC_CALL: {
             // Check if it's a standard library function
             for (int i = 0; stdlib_functions[i] != NULL; i++) {
@@ -595,6 +596,19 @@ LLVMValueRef handle_stdlib_call(CodeGen* this, const char* func_name, Expr** arg
     }*/
      else {
         fprintf(stderr, "Unknown standard library function: %s\n", func_name);
+        return NULL;
+    }
+}
+
+LLVMTypeRef get_type(TokenData tok_type, LLVMContextRef context) {
+    if (strcmp(tok_type.val, "int") == 0) {
+        return LLVMInt32TypeInContext(context);
+    } else if (strcmp(tok_type.val, "bool") == 0) {
+        return LLVMInt1TypeInContext(context);
+    } else if (strcmp(tok_type.val, "string") == 0) {
+        return LLVMPointerTypeInContext(context, 0); // char*
+    } else {
+        fprintf(stderr, "Unknown type: %s\n", tok_type.val);
         return NULL;
     }
 }

@@ -42,7 +42,7 @@ void optimize_module(CodeGen *this) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        printf("Usage: %s <source> [-o <output>] [--optimize]\n", argv[0]);
+        printf("Usage: %s <source> [-o <output>] [--optimize | -O] [--print-ir | -p]\n", argv[0]);
         return 1;
     }
 

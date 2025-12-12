@@ -1,5 +1,7 @@
 #include "std_lib.h"
 
+#include "memory.h"
+
 void setup_printf(CodeGen* this) {
     // Declare printf function
     LLVMTypeRef printf_arg_types[] = { LLVMPointerType(LLVMInt8TypeInContext(this->context), 0) };
@@ -11,12 +13,18 @@ void setup_printf(CodeGen* this) {
 }
 
 LLVMValueRef call_printf(CodeGen* this, Expr **args) {
-    // TODO: include the format as one of the arguments
-    // This should be done when we add support for string literals
-    LLVMValueRef fmt = LLVMBuildGlobalStringPtr(this->builder, "%d\n", "fmt");
-    LLVMValueRef llvm_args[] = { fmt, codegen_expr(this, args[0]) };
+    int argc = 0;
+    while (args[argc] != NULL) argc++;
+
+    // Allocate array for LLVMValueRef arguments
+    LLVMValueRef *llvm_args = s_malloc(sizeof(LLVMValueRef) * argc);
+    for (int i = 0; i < argc; i++) {
+        llvm_args[i] = codegen_expr(this, args[i]);
+    }
+
     LLVMValueRef printf_func = LLVMGetNamedFunction(this->module, "printf");
-    return LLVMBuildCall2(this->builder, LLVMGlobalGetValueType(printf_func), printf_func, llvm_args, 2, "");
+    LLVMValueRef result = LLVMBuildCall2(this->builder, LLVMGlobalGetValueType(printf_func), printf_func, llvm_args, argc, "");
+    return result;
 }
 
 /* (Need to implement Doubles and casting maybe)
