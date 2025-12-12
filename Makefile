@@ -29,11 +29,11 @@ obj/%.o: %.c | obj
 
 # $(OBJ_FILES) calls the rule above
 bin/mycompiler: $(OBJ_FILES) | bin
-	clang $^ -o $@ $(shell llvm-config --ldflags --libs core) -lm
+	clang $^ -o $@ $(shell llvm-config --ldflags --libs core)
 
 
 bin/test-%: $(CORE_OBJS) obj/%-main.o | bin
-	clang $^ -o $@ $(shell llvm-config --ldflags --libs core) -lm
+	clang $^ -o $@ $(shell llvm-config --ldflags --libs core)
 	@echo "✓ built $(@F)"
 
 all: bin/mycompiler

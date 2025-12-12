@@ -42,10 +42,25 @@ void optimize_module(CodeGen *this) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        printf("Usage: %s <filename>\n", argv[0]);
+        printf("Usage: %s <source> [-o <output>] [--optimize]\n", argv[0]);
         return 1;
     }
 
+    const char *output_file = NULL;
+    int emit_binary = 0;
+    int optimize = 0;
+    int print_ir = 0;
+
+    for (int i = 2; i < argc; ++i) {
+        if (!strcmp(argv[i], "-o") && i + 1 < argc) {
+            output_file = argv[++i];
+            emit_binary = 1;
+        } else if (!strcmp(argv[i], "--optimize") || !strcmp(argv[i], "-O")) {
+            optimize = 1;
+        } else if (!strcmp(argv[i], "--print-ir") || !strcmp(argv[i], "-p")) {
+            print_ir = 1;
+        }
+    }
     
     // Open the file
     FILE *file = fopen(argv[1], "r");
@@ -54,8 +69,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     
-    int optimize = argv[2] && (!strcmp(argv[2], "--optimize") || !strcmp(argv[2], "-O"));
-
     // Get file size
     fseek(file, 0, SEEK_END);
     long file_size = ftell(file);
@@ -83,58 +96,85 @@ int main(int argc, char *argv[]) {
     // Call the lex function (to be implemented)
     int result = lex(&lexer);
 
-    if (result == 0) {
-        printf("✅ Lexing successful\n");
-
-        // Initialize parser
-        Parser parser = init_parser(&lexer);
-
-        // Parse the program
-        Program *prog = parse(&parser);
-
-        if (prog) {
-            printf("✅ Parsing successful\n");
-
-            // Initialize code generator
-            CodeGen *codegen = init_codegen("phi_module");
-
-            // Generate LLVM IR
-            LLVMValueRef main_func = codegen_program(codegen, prog);
-
-            if (main_func) {
-                printf("✅ Code generation successful\n");
-
-                // Print the generated LLVM IR
-                printf("\nGenerated LLVM IR:\n");
-                dump_ir(codegen);
-
-                if (optimize) {
-                    // Optimize the module
-                    optimize_module(codegen);
-    
-                    printf("\nOptimized LLVM IR:\n");
-                    dump_ir(codegen);
-                }
-
-
-                // Optionally run the code using JIT
-                printf("\nExecuting code...\n");
-                int exit_code = run_jit(codegen);
-                printf("Program exited with code: %d\n", exit_code);
-            } else {
-                printf("Code generation failed\n");
-            }
-
-            // Clean up
-            cleanup_codegen(codegen);
-            free_program(prog);
-        } else {
-            printf("Parsing failed\n");
-        }
-    } else {
+    if (result == 1) {
         printf("Lexing failed\n");
+        s_free(buffer);
+        free_lexer(&lexer);
+        return 1;
     }
 
+    printf("✅ Lexing successful\n");
+
+    // Initialize parser
+    Parser parser = init_parser(&lexer);
+
+    // Parse the program
+    Program *prog = parse(&parser);
+
+    if (!prog) {
+        printf("Parsing failed\n");
+        s_free(buffer);
+        free_lexer(&lexer);
+        return 1;
+    }
+    printf("✅ Parsing successful\n");
+
+    // Initialize code generator
+    CodeGen *codegen = init_codegen("phi_module");
+
+    // Generate LLVM IR
+    LLVMValueRef main_func = codegen_program(codegen, prog);
+
+    if (!main_func) {
+        printf("Code generation failed\n");
+        cleanup_codegen(codegen);
+        free_program(prog);
+        s_free(buffer);
+        free_lexer(&lexer);
+        return 1;
+    }
+    printf("✅ Code generation successful\n");
+
+    // Print the generated LLVM IR
+    if (print_ir) {
+        printf("\nGenerated LLVM IR:\n");
+        dump_ir(codegen);
+    }
+
+    if (optimize) {
+        // Optimize the module
+        optimize_module(codegen);
+        if (print_ir) {
+            printf("\nOptimized LLVM IR:\n");
+            dump_ir(codegen);
+        }
+    }
+
+
+    // Optionally run the code using JIT
+    if (emit_binary) {
+        write_ir(codegen, "out.ll");
+        printf("Wrote LLVM IR to out.ll\n");
+
+        // Call clang to compile the bitcode to a binary
+        char command[512];
+        snprintf(command, sizeof(command), "clang -Wno-override-module out.ll -o %s", output_file);
+        int ret = system(command);
+        if (ret != 0) {
+            printf("Failed to compile bitcode to binary\n");
+        } else {
+            printf("✅ Compiled to binary: %s\n", output_file);
+        }
+
+    } else {
+        printf("\nExecuting code...\n");
+        int exit_code = run_jit(codegen);
+        printf("Program exited with code: %d\n", exit_code);
+    }
+
+    // Clean up
+    cleanup_codegen(codegen);
+    free_program(prog);
     // Free the buffer
     s_free(buffer);
     free_lexer(&lexer);
