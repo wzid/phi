@@ -1,9 +1,7 @@
-func get_name(): string => "cameron";
-
+func get_age(): int => 21;
 
 func main() {
-    int age = 21;
-    string name = get_name();
-    printf("%s is %d years old!\n", name, age);
+    string name = "wzid";
+    printf("%s is %d years old!\n", name, get_age());
     return 0;
 }

@@ -256,6 +256,7 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
                     stmt = parse_expression_stmt(this);
                 } else if (peek(this) == tok_increment || peek(this) == tok_decrement) {
                     // postfix operator
+                    // x++ or x--
                     stmt = expression_stmt(parse_increment_expr(this, false));
                 } else {
                     stmt = parse_var_assign(this);
@@ -264,6 +265,7 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
             // prefix increment/decrement operators
             case tok_increment:
             case tok_decrement:
+            // --x or ++x
                 stmt = expression_stmt(parse_increment_expr(this, true));
                 break;
             default:

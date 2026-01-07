@@ -40,6 +40,8 @@ typedef enum {
     tok_identifier,
     tok_number,
     tok_colon,
+    tok_if,
+    tok_else,
 } Token;
 
 typedef struct {
