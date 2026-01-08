@@ -255,6 +255,24 @@ Stmt* block_stmt(Stmt** statements, int stmt_count) {
 }
 
 /**
+ * Creates an if statement node.
+ * @param condition The condition expression.
+ * @param then_branch The 'then' branch statement (should be a BlockStmt).
+ * @param else_branch The 'else' branch statement (should be a BlockStmt, can be NULL).
+ * @return Pointer to the created Stmt node (of type IfStmt).
+ */
+Stmt *if_stmt(Expr *condition, Stmt *then_branch, Stmt *else_branch) {
+    Stmt* stmt = (Stmt*)s_malloc(sizeof(Stmt));
+
+    stmt->type = STMT_IF;
+    stmt->if_stmt.condition = condition;
+    stmt->if_stmt.then_branch = then_branch;
+    stmt->if_stmt.else_branch = else_branch;
+
+    return stmt;
+}
+
+/**
  * Creates a program node (the root of the AST).
  * @param statements Array of statement pointers in the program.
  * @param stmt_count Number of statements in the program.
@@ -398,6 +416,33 @@ char* stmt_to_string(Stmt* stmt) {
             char* expr_str = expr_to_string(expr);
             snprintf(buffer, 1024, "ExprStmt(%s)", expr_str);
             s_free(expr_str);
+            return buffer;
+        }
+        case STMT_IF: {
+            Expr* condition = stmt->if_stmt.condition;
+            char* condition_str = expr_to_string(condition);
+            snprintf(buffer, 1024, "IfStmt(%s)", condition_str);
+            Stmt* then_branch = stmt->if_stmt.then_branch;
+            for (int i = 0; i < then_branch->block_stmt.stmt_count; i++) {
+                char* body_stmt_str = stmt_to_string(then_branch->block_stmt.statements[i]);
+                strcat(buffer, "\n    ");
+                strcat(buffer, body_stmt_str);
+                s_free(body_stmt_str);
+            }
+
+            if (!stmt->if_stmt.else_branch) {
+                return buffer;
+            }
+
+            strcat(buffer, "\n  Else");
+            Stmt* else_branch = stmt->if_stmt.else_branch;
+            for (int i = 0; i < else_branch->block_stmt.stmt_count; i++) {
+                char* body_stmt_str = stmt_to_string(else_branch->block_stmt.statements[i]);
+                strcat(buffer, "\n    ");
+                strcat(buffer, body_stmt_str);
+                s_free(body_stmt_str);
+            }
+
             return buffer;
         }
         case STMT_BLOCK:

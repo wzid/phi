@@ -1,0 +1,6 @@
+FuncDeclStmt(main)
+  VarDeclStmt(int x = IntLiteral(4))
+  IfStmt(BinaryExpr(IdentifierExpr(x) > IntLiteral(4)))
+    ReturnStmt(IntLiteral(9))
+  Else
+    ReturnStmt(IntLiteral(8))
