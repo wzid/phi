@@ -36,10 +36,10 @@ Watch my devlogs on YouTube [here](https://www.youtube.com/watch?v=QPHYcFLAWoo&l
 - [x] Implement a print function
 - [x] Implement strings
 - [x] Implement "if statements"
-- [ ] Implement "while loops"
-- [ ] Include a standard library (especially math)
+- [x] Implement "while loops"
 - [ ] Allow main function to exist without return statement
 #### Maybe?
+- [ ] Include a standard library (especially math)
 - [ ] Allow custom types
 - [ ] Infer return type for implicit return functions
 
