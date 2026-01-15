@@ -1,17 +1,24 @@
-func get_age(): int => 25;
+func fib(n: int): int {
+    int a = 0;
+    int b = 1;
+    int i = 2;
+    
+    if (n < 2) {
+        return n;
+    }
+    
+    while (i < n + 1) {
+        int temp = a + b;
+        a = b;
+        b = temp;
+        i = i + 1;
+    }
+    
+    return b;
+}
 
 func main() {
-    if (get_age() < 21) {
-        int adjustment = 48;
-        printf("No alcohol for you!\n");
-    } else {
-        printf("Bottles up!\n");
-    }
-
-    int adjustment = 90;
-    if (get_age() + adjustment > 64) {
-        printf("RETIREMENT IS FOR YOU SIR %d\n", adjustment);
-    }
-
+    int result = fibfibonacci(10);
+    printf("Fib of 10 is %d\n", result);
     return 0;
 }
