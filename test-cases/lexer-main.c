@@ -1,8 +1,12 @@
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "lexer.h"
 #include "memory.h"
+
+// Print a string with C-style escapes (e.g., "\n" for newline)
+static void print_escaped_string(const char *s);
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -54,7 +58,9 @@ int main(int argc, char *argv[]) {
         TokenData token = lexer.tokens[i];
 
         if (token.type == tok_identifier || token.type == tok_string || token.type == tok_number || token.type == tok_type) {
-            printf("%s(%s)\n", token_to_string(token.type), token.val);
+            printf("%s(", token_to_string(token.type));
+            print_escaped_string(token.val);
+            printf(")\n");
         } else {
             printf("%s\n", token_to_string(token.type));
         }
@@ -64,4 +70,23 @@ int main(int argc, char *argv[]) {
     s_free(buffer);
     free_lexer(&lexer);
     return 0;
+}
+
+// Print a string with C-style escapes (e.g., "\n" for newline)
+static void print_escaped_string(const char *s) {
+    for (; *s; ++s) {
+        switch (*s) {
+            case '\n': printf("\\n"); break;
+            case '\t': printf("\\t"); break;
+            case '\r': printf("\\r"); break;
+            case '\\': printf("\\\\"); break;
+            case '"': printf("\\\""); break;
+            default:
+                if ((unsigned char)*s < 32 || (unsigned char)*s == 127) {
+                    printf("\\x%02x", (unsigned char)*s);
+                } else {
+                    putchar(*s);
+                }
+        }
+    }
 }
