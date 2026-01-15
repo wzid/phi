@@ -1,0 +1,1 @@
+GlobalVarDeclStmt(int x = IntLiteral(97))

@@ -1,5 +1,6 @@
 func main() {
     string name = "cameron";
     printf("cameron");
+    printf(name);
     return 0;
 }

@@ -1,4 +1,5 @@
 FuncDeclStmt(main)
   VarDeclStmt(string name = StringLiteral("cameron"))
+  ExprStmt(FuncCallExpr(printf(StringLiteral("cameron"))))
   ExprStmt(FuncCallExpr(printf(IdentifierExpr(name))))
   ReturnStmt(IntLiteral(0))

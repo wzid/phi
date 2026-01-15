@@ -1,0 +1,2 @@
+FuncDeclStmt(testComment)
+  VarDeclStmt(int x = IntLiteral(5))
