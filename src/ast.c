@@ -273,6 +273,21 @@ Stmt *if_stmt(Expr *condition, Stmt *then_branch, Stmt *else_branch) {
 }
 
 /**
+ * Creates a while statement node.
+ * @param condition The condition expression.
+ * @param body The body statement (should be a BlockStmt).
+ */
+Stmt *while_stmt(Expr *condition, Stmt *body) {
+    Stmt* stmt = (Stmt*)s_malloc(sizeof(Stmt));
+
+    stmt->type = STMT_WHILE;
+    stmt->while_stmt.condition = condition;
+    stmt->while_stmt.body = body;
+
+    return stmt;
+}
+
+/**
  * Creates a program node (the root of the AST).
  * @param statements Array of statement pointers in the program.
  * @param stmt_count Number of statements in the program.
@@ -429,7 +444,8 @@ char* stmt_to_string(Stmt* stmt) {
                 strcat(buffer, body_stmt_str);
                 s_free(body_stmt_str);
             }
-
+            
+            s_free(condition_str);
             if (!stmt->if_stmt.else_branch) {
                 return buffer;
             }
@@ -443,6 +459,21 @@ char* stmt_to_string(Stmt* stmt) {
                 s_free(body_stmt_str);
             }
 
+            return buffer;
+        }
+        case STMT_WHILE: {
+            Expr* condition = stmt->while_stmt.condition;
+            char* condition_str = expr_to_string(condition);
+            snprintf(buffer, 1024, "WhileStmt(%s)", condition_str);
+            Stmt* body = stmt->while_stmt.body;
+            for (int i = 0; i < body->block_stmt.stmt_count; i++) {
+                char* body_stmt_str = stmt_to_string(body->block_stmt.statements[i]);
+                strcat(buffer, "\n    ");
+                strcat(buffer, body_stmt_str);
+                s_free(body_stmt_str);
+            }
+
+            s_free(condition_str);
             return buffer;
         }
         case STMT_BLOCK:

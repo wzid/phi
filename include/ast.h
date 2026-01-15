@@ -98,6 +98,7 @@ typedef enum {
     STMT_EXPR,
     STMT_BLOCK,
     STMT_IF,
+    STMT_WHILE,
 } StmtKind;
 
 // Expression statement e.g. a function call used as a statement
@@ -167,6 +168,12 @@ typedef struct {
     Stmt *else_branch; // Should be a BlockStmt, can be NULL
 } IfStmt;
 
+// While statement e.g. while (condition) { ... }
+typedef struct {
+    Expr *condition;
+    Stmt *body; // Should be a BlockStmt
+} WhileStmt;
+
 // The main statement struct
 // It uses a union to hold the different statement types
 struct stmt {
@@ -180,6 +187,7 @@ struct stmt {
         ReturnStmt return_stmt;
         BlockStmt block_stmt;
         IfStmt if_stmt;
+        WhileStmt while_stmt;
     };
 };
 
@@ -211,6 +219,7 @@ Stmt *return_stmt(Expr *value);
 Stmt *expression_stmt(Expr *expr);
 Stmt *block_stmt(Stmt **statements, int stmt_count);
 Stmt *if_stmt(Expr *condition, Stmt *then_branch, Stmt *else_branch);
+Stmt *while_stmt(Expr *condition, Stmt *body);
 void free_program(Program *prog);
 
 char *expr_to_string(Expr *expr);

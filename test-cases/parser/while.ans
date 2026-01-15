@@ -1,0 +1,6 @@
+FuncDeclStmt(main)
+  VarDeclStmt(int i = IntLiteral(1))
+  WhileStmt(BinaryExpr(IdentifierExpr(i) < IntLiteral(5)))
+    ExprStmt(FuncCallExpr(printf(StringLiteral("Hello num: %d"), IdentifierExpr(i))))
+    VarAssignStmt(i += IntLiteral(1))
+  ReturnStmt(IntLiteral(0))
