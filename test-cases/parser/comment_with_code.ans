@@ -1,0 +1,2 @@
+FuncDeclStmt(test)
+  ReturnStmt(FuncCallExpr(add(IntLiteral(5), IntLiteral(3))))

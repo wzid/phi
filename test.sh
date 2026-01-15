@@ -10,31 +10,39 @@ RED="\033[31m"
 RESET="\033[0m"
 
 
+
+# Parse arguments
 type=$1
+save_output=false
+if [[ "$2" == "--save-output" ]]; then
+    save_output=true
+fi
+
 COMPILER=./bin/test-$type
 DIR=./test-cases/$type
 
 # Generate output for each testcase and multithread it
 pids=()
 file_names=()
-for file in ./test-cases/$type/*.phi; do
-    
-    file_name=$(basename $file .phi)
-    # Run the compiler with a timeout of 10 seconds, redirecting both stdout and stderr to .out file
-    # Use & to run in background
-    # The timeout is used to make sure that we don't get stuck in an infinite loop while compiling the program
-    # This only matters if there is an error in our compiler code where an infinite loop could occur
-    gtimeout 10s $COMPILER $file > $DIR/$file_name.out 2>&1 &
 
+# Run compiler for each testcase, output to temp file
+pids=()
+file_names=()
+for file in ./test-cases/tests/*.phi; do
+    file_name=$(basename $file .phi)
+    tmp_out_file="$DIR/tmp_$file_name.out"
+    gtimeout 10s $COMPILER $file > "$tmp_out_file" 2>&1 &
     pids+=($!)
     file_names+=($file_name)
 done
+
 
 
 error_file_names=()
 for i in ${!pids[@]}; do
     pid=${pids[$i]}
     file_name=${file_names[$i]}
+    tmp_out_file="$DIR/tmp_$file_name.out"
     out_file="$DIR/$file_name.out"
 
     # Wait for the process to finish
@@ -44,11 +52,16 @@ for i in ${!pids[@]}; do
     # If non zero return value (compile error)
     if [ $status -ne 0 ]; then
         error_file_names+=($file_name)
+        mv "$tmp_out_file" "$out_file"
     fi
 
-    # If timeout occurred (status 124), append message to .out file
+    # If timeout occurred (status 124), append message to output file
     if [ $status -eq 124 ]; then
-        echo "[TIMEOUT] Test case exceeded 10 seconds." >> "$out_file"
+        if [ -f "$out_file" ]; then
+            echo "[TIMEOUT] Test case exceeded 10 seconds." >> "$out_file"
+        else
+            echo "[TIMEOUT] Test case exceeded 10 seconds." >> "$tmp_out_file"
+        fi
     fi
 done
 
@@ -70,20 +83,30 @@ if [ ${#error_file_names[@]} -ne 0 ]; then
 fi
 
 
+
 passed_count=0
 failed_file_names=()
 for file_name in ${file_names[@]}; do
-    # If the file name is in the error list, skip it (using a regex match)
+    tmp_out_file="$DIR/tmp_$file_name.out"
+    out_file="$DIR/$file_name.out"
+    # If the file name is in the error list, skip it
     if [[ ${error_file_names} =~ $file_name ]]; then
         continue
     fi
-    
-    # Insert diff command here
-    if ! diff -w -u $DIR/$file_name.out $DIR/$file_name.ans > $DIR/$file_name.diff; then
+
+    # Use temp file for diff
+    if ! diff -w -u "$tmp_out_file" "$DIR/$file_name.ans" > "$DIR/$file_name.diff"; then
         failed_file_names+=($file_name)
+        mv "$tmp_out_file" "$out_file"
     else
-        rm $DIR/$file_name.diff # remove diff if its empty
+        rm "$DIR/$file_name.diff" # remove diff if its empty
         passed_count=$(($passed_count + 1))
+        # Only keep .out if flag is set
+        if [ "$save_output" = false ]; then
+            rm -f "$tmp_out_file"
+        else
+            mv "$tmp_out_file" "$out_file"
+        fi
     fi
 done
 

@@ -1,9 +1,0 @@
-func calc(): int {
-    return 2 + 2;
-}
-
-func main() {
-    int xresult = 1000;
-    int george = 90;
-    return (george + xresult) * xresult;
-}

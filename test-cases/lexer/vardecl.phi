@@ -1,2 +1,0 @@
-int result = 4;
-return result + 5;
