@@ -24,6 +24,7 @@ static Stmt *parse_var_assign(Parser *this);
 static Stmt *parse_return(Parser *this);
 static Stmt *parse_expression_stmt(Parser *this);
 static Stmt *parse_if_stmt(Parser *this);
+static Stmt *parse_while_stmt(Parser *this);
 
 static void parse_function_parameters(Parser *this, TokenData** out_parameter_names, TokenData** out_parameter_types, int *out_param_count);
 
@@ -177,6 +178,30 @@ static Stmt* parse_if_stmt(Parser *this) {
     return if_stmt(condition, then_block, else_block);
 }
 
+static Stmt *parse_while_stmt(Parser *this) {
+    expect_next_and_consume_current(this, tok_lparen);
+    consume(this); // consume current token, (
+    Expr* condition = parse_expression(this, LOWEST);
+    expect_next_and_consume_current(this, tok_rparen);
+    expect_next_and_consume_current(this, tok_lbrace);
+    consume(this); // consume current token, {
+
+    int body_stmt_count = 0;
+    Stmt** body_stmts = parse_block_statements(this, &body_stmt_count);
+    Stmt *body_block = block_stmt(body_stmts, body_stmt_count);
+
+    // is this needed? got from the parse func decl
+    if (this->cur_tok != tok_rbrace) {
+        Location loc = curr_token_data(this).loc;
+        fprintf(stderr, "(%zu:%zu) Expected closing '}' for while statement, got %s\n", loc.line, loc.col,
+                token_to_string(this->cur_tok));
+        exit(1);
+    }
+    consume(this); // consume current token, }
+
+    return while_stmt(condition, body_block);
+}
+
 /**
  * @param this The parser instance.
  * @param out_parameter_names Pointer to array of TokenData to hold parameter names.
@@ -312,6 +337,9 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
                 break;
             case tok_if:
                 stmt = parse_if_stmt(this);
+                break;
+            case tok_while:
+                stmt = parse_while_stmt(this);
                 break;
             // prefix increment/decrement operators
             case tok_increment:
@@ -508,6 +536,8 @@ static Expr *parse_infix(Parser *this, Expr *left) {
         case tok_mod:
         case tok_lessthan:
         case tok_greaterthan:
+        case tok_lessthan_equal:
+        case tok_greaterthan_equal:
         case tok_equality:
         case tok_inequality: {
             TokenData op_token = next_token_data(this);
@@ -547,6 +577,8 @@ Precedence get_precedence(Token token) {
             return EQUALITY;
         case tok_lessthan:
         case tok_greaterthan:
+        case tok_lessthan_equal:
+        case tok_greaterthan_equal:
             return LESS_GREATER;
         case tok_plus:
         case tok_minus:

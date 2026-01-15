@@ -214,6 +214,10 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
                     return LLVMBuildICmp(this->builder, LLVMIntSLT, left, right, "lttmp");
                 case tok_greaterthan:
                     return LLVMBuildICmp(this->builder, LLVMIntSGT, left, right, "gttmp");
+                case tok_lessthan_equal:
+                    return LLVMBuildICmp(this->builder, LLVMIntSLE, left, right, "letmp");
+                case tok_greaterthan_equal:
+                    return LLVMBuildICmp(this->builder, LLVMIntSGE, left, right, "getmp");
                 default:
                     fprintf(stderr, "Unknown binary operator\n");
                     return NULL;
@@ -598,6 +602,45 @@ int codegen_stmt(CodeGen* this, Stmt* stmt) {
             // Continue at merge block
             LLVMPositionBuilderAtEnd(this->builder, merge_bb);
             return 0;
+        }
+        case STMT_WHILE: {
+            // Get the current function
+            LLVMValueRef func = LLVMGetBasicBlockParent(LLVMGetInsertBlock(this->builder));
+
+            // Create blocks for loop condition, body, and after loop
+            LLVMBasicBlockRef cond_bb = LLVMAppendBasicBlockInContext(this->context, func, "loopcond");
+            LLVMBasicBlockRef body_bb = LLVMAppendBasicBlockInContext(this->context, func, "loopbody");
+            LLVMBasicBlockRef after_bb = LLVMAppendBasicBlockInContext(this->context, func, "loopafter");
+
+            // Branch to condition block
+            LLVMBuildBr(this->builder, cond_bb);
+
+            // Emit condition block
+            LLVMPositionBuilderAtEnd(this->builder, cond_bb);
+            LLVMValueRef cond_val = codegen_expr(this, stmt->while_stmt.condition);
+            if (!cond_val) {
+                fprintf(stderr, "Failed to generate code for while condition.\n");
+                return 0;
+            }
+
+            // Convert condition to bool (i1) if needed
+            LLVMTypeRef cond_type = LLVMTypeOf(cond_val);
+            if (LLVMGetTypeKind(cond_type) != LLVMIntegerTypeKind || LLVMGetIntTypeWidth(cond_type) != 1) {
+                cond_val = LLVMBuildICmp(this->builder, LLVMIntNE, cond_val, LLVMConstInt(cond_type, 0, 0), "whilecond");
+            }
+
+            // Build conditional branch to body or after loop
+            LLVMBuildCondBr(this->builder, cond_val, body_bb, after_bb);
+
+            // Emit body block
+            LLVMPositionBuilderAtEnd(this->builder, body_bb);
+            codegen_stmt(this, stmt->while_stmt.body);
+            // After body, branch back to condition
+            LLVMBuildBr(this->builder, cond_bb);
+
+            // Continue at after loop block
+            LLVMPositionBuilderAtEnd(this->builder, after_bb);
+            break;
         }
         default:
             fprintf(stderr, "Unknown statement type\n");

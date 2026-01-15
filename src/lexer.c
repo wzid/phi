@@ -91,10 +91,22 @@ int lex(Lexer *lexer) {
                 }
                 break;
             case '<':
-                add_token(lexer, tok_lessthan, "<");
+
+                if (next_char(lexer) == '=') {
+                    lexer->cur_tok++; // skip the next '='
+                    add_token(lexer, tok_lessthan_equal, "<=");
+                } else {
+                    add_token(lexer, tok_lessthan, "<");
+                }
+
                 break;
             case '>':
-                add_token(lexer, tok_greaterthan, ">");
+                if (next_char(lexer) == '=') {
+                    lexer->cur_tok++; // skip the next '='
+                    add_token(lexer, tok_greaterthan_equal, ">=");
+                } else {
+                    add_token(lexer, tok_greaterthan, ">");
+                }
                 break;
             case '.':
                 add_token(lexer, tok_period, ".");
@@ -224,6 +236,8 @@ static void handle_identifier(Lexer *lexer) {
         add_token(lexer, tok_if, identifier);
     } else if (!strcmp(identifier, "else")) {
         add_token(lexer, tok_else, identifier);
+    } else if (!strcmp(identifier, "while")) {
+        add_token(lexer, tok_while, identifier);
     } else {
         add_token(lexer, tok_identifier, identifier);
     }
@@ -272,6 +286,8 @@ char *token_to_string(Token token) {
         case tok_inequality: return "TOK_INEQUALITY";
         case tok_lessthan: return "TOK_LESSTHAN";
         case tok_greaterthan: return "TOK_GREATERTHAN";
+        case tok_lessthan_equal: return "TOK_LESSTHAN_EQUAL";
+        case tok_greaterthan_equal: return "TOK_GREATERTHAN_EQUAL";
         case tok_period: return "TOK_PERIOD";
         case tok_semi: return "TOK_SEMI";
         case tok_and: return "TOK_AND";
@@ -288,6 +304,7 @@ char *token_to_string(Token token) {
         case tok_colon: return "TOK_COLON";
         case tok_if: return "TOK_IF";
         case tok_else: return "TOK_ELSE";
+        case tok_while: return "TOK_WHILE";
         default: return "TOK_UNKNOWN";
     }
 }

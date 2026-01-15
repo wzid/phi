@@ -25,7 +25,9 @@ typedef enum {
     tok_equality, // ==
     tok_inequality, // !=
     tok_lessthan,
+    tok_lessthan_equal, // <=
     tok_greaterthan,
+    tok_greaterthan_equal, // >=
     tok_period,
     tok_semi,
     tok_and,
@@ -42,6 +44,7 @@ typedef enum {
     tok_colon,
     tok_if,
     tok_else,
+    tok_while,
 } Token;
 
 typedef struct {
