@@ -35,9 +35,10 @@ Watch my devlogs on YouTube [here](https://www.youtube.com/watch?v=QPHYcFLAWoo&l
 - [x] Variable increment operators
 - [x] Implement a print function
 - [x] Implement strings
-- [ ] Implement "if statements"
+- [x] Implement "if statements"
 - [ ] Implement "for loops" and "while loops"
 - [ ] Include a standard library (especially math)
+- [ ] Allow main function to exist without return statement
 #### Maybe?
 - [ ] Allow custom types
 - [ ] Infer return type for implicit return functions

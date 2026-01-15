@@ -533,8 +533,71 @@ int codegen_stmt(CodeGen* this, Stmt* stmt) {
                     fprintf(stderr, "Unknown assignment operator\n");
                     return 0;
             }
+            break;
+        }
+        case STMT_IF: {
+            // Generate code for the condition expression
+            Expr* cond_expr = stmt->if_stmt.condition;
+            LLVMValueRef cond_val = codegen_expr(this, cond_expr);
+            if (!cond_val) {
+                fprintf(stderr, "Failed to generate code for if condition.\n");
+                return 0;
+            }
 
-            break;   
+            // Convert condition to bool (i1) if needed
+            LLVMTypeRef cond_type = LLVMTypeOf(cond_val);
+            if (LLVMGetTypeKind(cond_type) != LLVMIntegerTypeKind || LLVMGetIntTypeWidth(cond_type) != 1) {
+                cond_val = LLVMBuildICmp(this->builder, LLVMIntNE, cond_val, LLVMConstInt(cond_type, 0, 0), "ifcond");
+            }
+
+            // Get the current function
+            LLVMValueRef func = LLVMGetBasicBlockParent(LLVMGetInsertBlock(this->builder));
+
+            // Create blocks for then, else, and merge
+            LLVMBasicBlockRef then_bb = LLVMAppendBasicBlockInContext(this->context, func, "then");
+            LLVMBasicBlockRef else_bb = NULL;
+            LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlockInContext(this->context, func, "ifcont");
+
+            int has_else = (stmt->if_stmt.else_branch != NULL);
+            if (has_else) {
+                else_bb = LLVMAppendBasicBlockInContext(this->context, func, "else");
+            } else {
+                else_bb = merge_bb;
+            }
+
+            // Build the conditional branch
+            LLVMBuildCondBr(this->builder, cond_val, then_bb, else_bb);
+
+            // Emit then block (with scope)
+            LLVMPositionBuilderAtEnd(this->builder, then_bb);
+            int saved_var_count_then = this->var_count;
+            int then_has_return = codegen_stmt(this, stmt->if_stmt.then_branch);
+            // Pop variables declared in then block
+            for (int i = saved_var_count_then; i < this->var_count; ++i) {
+                if (this->var_names && this->var_names[i]) s_free(this->var_names[i]);
+            }
+            this->var_count = saved_var_count_then;
+            if (!then_has_return) {
+                LLVMBuildBr(this->builder, merge_bb);
+            }
+
+            // Emit else block if present (with scope)
+            if (has_else) {
+                LLVMPositionBuilderAtEnd(this->builder, else_bb);
+                int saved_var_count_else = this->var_count;
+                int else_has_return = codegen_stmt(this, stmt->if_stmt.else_branch);
+                for (int i = saved_var_count_else; i < this->var_count; ++i) {
+                    if (this->var_names && this->var_names[i]) s_free(this->var_names[i]);
+                }
+                this->var_count = saved_var_count_else;
+                if (!else_has_return) {
+                    LLVMBuildBr(this->builder, merge_bb);
+                }
+            }
+
+            // Continue at merge block
+            LLVMPositionBuilderAtEnd(this->builder, merge_bb);
+            return 0;
         }
         default:
             fprintf(stderr, "Unknown statement type\n");

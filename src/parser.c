@@ -23,6 +23,7 @@ static Stmt *parse_var_decl(Parser *this);
 static Stmt *parse_var_assign(Parser *this);
 static Stmt *parse_return(Parser *this);
 static Stmt *parse_expression_stmt(Parser *this);
+static Stmt *parse_if_stmt(Parser *this);
 
 static void parse_function_parameters(Parser *this, TokenData** out_parameter_names, TokenData** out_parameter_types, int *out_param_count);
 
@@ -128,6 +129,53 @@ static Stmt *parse_expression_stmt(Parser *this) {
     return expression_stmt(expr);
 }
 
+static Stmt* parse_if_stmt(Parser *this) {
+    consume(this); // consume current token, if
+    consume(this); // consume current token, (
+    Expr* condition = parse_expression(this, LOWEST);
+    expect_next_and_consume_current(this, tok_rparen);
+    expect_next_and_consume_current(this, tok_lbrace);
+    consume(this); // consume current token, {
+    
+    int then_stmt_count = 0;
+    Stmt** then_stmts = parse_block_statements(this, &then_stmt_count);
+    
+    Stmt *then_block = block_stmt(then_stmts, then_stmt_count);
+    
+    // is this needed? got from the parse func decl
+    if (this->cur_tok != tok_rbrace) {
+        Location loc = curr_token_data(this).loc;
+        fprintf(stderr, "(%zu:%zu) Expected closing '}' for if statement, got %s\n", loc.line, loc.col,
+                token_to_string(this->cur_tok));
+        exit(1);
+    }
+
+    consume(this); // consume current token, }
+
+    // early exit if we don't have an else branch
+    if (this->cur_tok != tok_else) {
+        return if_stmt(condition, then_block, NULL);
+    }
+
+    expect_next_and_consume_current(this, tok_lbrace);
+    consume(this); // consume current token, {
+
+    int else_stmt_count = 0;
+    Stmt** else_stmts = parse_block_statements(this, &else_stmt_count);
+    Stmt *else_block = block_stmt(else_stmts, else_stmt_count);
+
+    // is this needed? got from the parse func decl
+    if (this->cur_tok != tok_rbrace) {
+        Location loc = curr_token_data(this).loc;
+        fprintf(stderr, "(%zu:%zu) Expected closing '}' for if-else statement, got %s\n", loc.line, loc.col,
+                token_to_string(this->cur_tok));
+        exit(1);
+    }
+
+    consume(this); // consume current token, }
+
+    return if_stmt(condition, then_block, else_block);
+}
 
 /**
  * @param this The parser instance.
@@ -256,14 +304,19 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
                     stmt = parse_expression_stmt(this);
                 } else if (peek(this) == tok_increment || peek(this) == tok_decrement) {
                     // postfix operator
+                    // x++ or x--
                     stmt = expression_stmt(parse_increment_expr(this, false));
                 } else {
                     stmt = parse_var_assign(this);
                 }
                 break;
+            case tok_if:
+                stmt = parse_if_stmt(this);
+                break;
             // prefix increment/decrement operators
             case tok_increment:
             case tok_decrement:
+            // --x or ++x
                 stmt = expression_stmt(parse_increment_expr(this, true));
                 break;
             default:

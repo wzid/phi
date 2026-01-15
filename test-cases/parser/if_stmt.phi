@@ -1,0 +1,8 @@
+func main() {
+    int x = 4;
+    if (x > 4) {
+        return 9;
+    } else {
+        return 8;
+    }
+}

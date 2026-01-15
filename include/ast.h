@@ -97,6 +97,7 @@ typedef enum {
     STMT_RETURN,
     STMT_EXPR,
     STMT_BLOCK,
+    STMT_IF,
 } StmtKind;
 
 // Expression statement e.g. a function call used as a statement
@@ -159,6 +160,13 @@ typedef struct {
     int parameter_count;
 } FuncDeclStmt;
 
+// If statement e.g. if (condition) { ... } else { ... }
+typedef struct {
+    Expr *condition;
+    Stmt *then_branch; // Should be a BlockStmt
+    Stmt *else_branch; // Should be a BlockStmt, can be NULL
+} IfStmt;
+
 // The main statement struct
 // It uses a union to hold the different statement types
 struct stmt {
@@ -171,6 +179,7 @@ struct stmt {
         ExprStmt expression_stmt;
         ReturnStmt return_stmt;
         BlockStmt block_stmt;
+        IfStmt if_stmt;
     };
 };
 
@@ -201,7 +210,7 @@ Stmt *global_var_decl_stmt(TokenData type, TokenData identifier, Expr *value);
 Stmt *return_stmt(Expr *value);
 Stmt *expression_stmt(Expr *expr);
 Stmt *block_stmt(Stmt **statements, int stmt_count);
-
+Stmt *if_stmt(Expr *condition, Stmt *then_branch, Stmt *else_branch);
 void free_program(Program *prog);
 
 char *expr_to_string(Expr *expr);

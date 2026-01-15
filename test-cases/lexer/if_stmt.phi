@@ -1,0 +1,5 @@
+func main() {
+    if 6 < 3 {
+        printf("Hello");
+    }
+}

@@ -100,7 +100,7 @@ int lex(Lexer *lexer) {
                 add_token(lexer, tok_period, ".");
                 break;
             case ';':
-                add_token(lexer, tok_semi, ";");
+                add_token(lexer, tok_semi, ";");    
                 break;
             case '&':
                 add_token(lexer, tok_and, "&");
@@ -220,6 +220,10 @@ static void handle_identifier(Lexer *lexer) {
         add_token(lexer, tok_type, identifier);
     } else if (!strcmp(identifier, "return")) {
         add_token(lexer, tok_return, identifier);
+    } else if (!strcmp(identifier, "if")) {
+        add_token(lexer, tok_if, identifier);
+    } else if (!strcmp(identifier, "else")) {
+        add_token(lexer, tok_else, identifier);
     } else {
         add_token(lexer, tok_identifier, identifier);
     }
@@ -282,6 +286,8 @@ char *token_to_string(Token token) {
         case tok_identifier: return "TOK_IDENTIFIER";
         case tok_number: return "TOK_NUMBER";
         case tok_colon: return "TOK_COLON";
+        case tok_if: return "TOK_IF";
+        case tok_else: return "TOK_ELSE";
         default: return "TOK_UNKNOWN";
     }
 }
