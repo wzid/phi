@@ -165,6 +165,11 @@ typedef struct {
 typedef struct {
     Expr *condition;
     Stmt *then_branch; // Should be a BlockStmt
+    
+    int else_if_count;
+    Expr **else_if_conditions; // Array of expressions for else-if conditions
+    Stmt **else_if_branches; // Array of BlockStmt pointers for else-if branches
+    
     Stmt *else_branch; // Should be a BlockStmt, can be NULL
 } IfStmt;
 
@@ -218,7 +223,7 @@ Stmt *global_var_decl_stmt(TokenData type, TokenData identifier, Expr *value);
 Stmt *return_stmt(Expr *value);
 Stmt *expression_stmt(Expr *expr);
 Stmt *block_stmt(Stmt **statements, int stmt_count);
-Stmt *if_stmt(Expr *condition, Stmt *then_branch, Stmt *else_branch);
+Stmt *if_stmt(Expr *condition, Stmt *then_branch, int else_if_count, Expr **else_if_conditions, Stmt **else_if_branches, Stmt *else_branch);
 Stmt *while_stmt(Expr *condition, Stmt *body);
 void free_program(Program *prog);
 

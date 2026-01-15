@@ -5,8 +5,8 @@
 #include "lexer.h"
 #include "memory.h"
 
-// Print a string with C-style escapes (e.g., "\n" for newline)
-static void print_escaped_string(const char *s);
+// Helper: write a string with C-style escapes into a buffer (returns buffer pointer)
+static char* escape_c_string(const char* s);
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -58,9 +58,9 @@ int main(int argc, char *argv[]) {
         TokenData token = lexer.tokens[i];
 
         if (token.type == tok_identifier || token.type == tok_string || token.type == tok_number || token.type == tok_type) {
-            printf("%s(", token_to_string(token.type));
-            print_escaped_string(token.val);
-            printf(")\n");
+            char* escaped_val = escape_c_string(token.val);
+            printf("%s(%s)\n", token_to_string(token.type), escaped_val);
+            s_free(escaped_val);
         } else {
             printf("%s\n", token_to_string(token.type));
         }
@@ -72,21 +72,28 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-// Print a string with C-style escapes (e.g., "\n" for newline)
-static void print_escaped_string(const char *s) {
+// Helper: write a string with C-style escapes into a buffer (returns buffer pointer)
+static char* escape_c_string(const char* s) {
+    // Allocate a buffer large enough for worst case (every char is escaped)
+    size_t len = strlen(s);
+    char* buf = s_malloc(len * 4 + 1); // plenty of space
+    char* p = buf;
     for (; *s; ++s) {
         switch (*s) {
-            case '\n': printf("\\n"); break;
-            case '\t': printf("\\t"); break;
-            case '\r': printf("\\r"); break;
-            case '\\': printf("\\\\"); break;
-            case '"': printf("\\\""); break;
+            case '\n': *p++ = '\\'; *p++ = 'n'; break;
+            case '\t': *p++ = '\\'; *p++ = 't'; break;
+            case '\r': *p++ = '\\'; *p++ = 'r'; break;
+            case '\\': *p++ = '\\'; *p++ = '\\'; break;
+            case '"': *p++ = '\\'; *p++ = '"'; break;
             default:
                 if ((unsigned char)*s < 32 || (unsigned char)*s == 127) {
-                    printf("\\x%02x", (unsigned char)*s);
+                    sprintf(p, "\\x%02x", (unsigned char)*s);
+                    p += 4;
                 } else {
-                    putchar(*s);
+                    *p++ = *s;
                 }
         }
     }
+    *p = '\0';
+    return buf;
 }

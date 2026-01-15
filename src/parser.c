@@ -155,9 +155,63 @@ static Stmt* parse_if_stmt(Parser *this) {
 
     // early exit if we don't have an else branch
     if (this->cur_tok != tok_else) {
-        return if_stmt(condition, then_block, NULL);
+        return if_stmt(condition, then_block, 0, NULL, NULL, NULL);
     }
 
+    // Store the else-if condition and branch
+    int max_else_if = 8;
+    Expr** else_if_conditions = s_malloc(max_else_if * sizeof(Expr*));
+    Stmt** else_if_branches = s_malloc(max_else_if * sizeof(Stmt*));
+    int else_if_count = 0;
+
+    // else if branches
+    while (peek(this) == tok_if) {
+        consume(this); // consume current token, else
+        expect_next_and_consume_current(this, tok_lparen);
+        Expr* else_if_condition = parse_expression(this, LOWEST);
+        expect_next_and_consume_current(this, tok_lbrace);
+        consume(this); // consume current token, {
+
+        int else_if_stmt_count = 0;
+        Stmt** else_if_stmts = parse_block_statements(this, &else_if_stmt_count);
+        Stmt *else_if_block = block_stmt(else_if_stmts, else_if_stmt_count);
+
+        if (this->cur_tok != tok_rbrace) {
+            Location loc = curr_token_data(this).loc;
+            fprintf(stderr, "(%zu:%zu) Expected closing '}' for else-if statement, got %s\n", loc.line, loc.col,
+                    token_to_string(this->cur_tok));
+            exit(1);
+        }
+
+        consume(this); // consume current token, }
+
+        // Resize arrays if needed
+        if (else_if_count >= max_else_if) {
+            max_else_if *= 2;
+            else_if_conditions = s_realloc(else_if_conditions, max_else_if * sizeof(Expr*));
+            else_if_branches = s_realloc(else_if_branches, max_else_if * sizeof(Stmt*));
+        }
+
+        else_if_conditions[else_if_count] = else_if_condition;
+        else_if_branches[else_if_count] = else_if_block;
+        else_if_count++;
+    }
+
+    if (else_if_count == 0) {
+        s_free(else_if_conditions);
+        s_free(else_if_branches);
+    }
+
+    if (this->cur_tok != tok_else && else_if_count > 0) {
+        return if_stmt(condition, then_block, else_if_count, else_if_conditions, else_if_branches, NULL);
+
+        // it is impossible to get this case below because we checked above that an else branch exists at least
+        // even though we are checking to see if the current token is else and the else if count is > 0
+        // We could simplify it to just check if the cur token is not else because that would mean that there exists else ifs
+        // return if_stmt(condition, then_block, 0, NULL, NULL, NULL);
+    }
+
+    // cur token = tok_else
     expect_next_and_consume_current(this, tok_lbrace);
     consume(this); // consume current token, {
 
@@ -175,7 +229,11 @@ static Stmt* parse_if_stmt(Parser *this) {
 
     consume(this); // consume current token, }
 
-    return if_stmt(condition, then_block, else_block);
+    if (else_if_count > 0) {
+        return if_stmt(condition, then_block, else_if_count, else_if_conditions, else_if_branches, else_block);
+    } else {
+        return if_stmt(condition, then_block, 0, NULL, NULL, else_block);
+    }
 }
 
 static Stmt *parse_while_stmt(Parser *this) {
