@@ -380,6 +380,9 @@ int codegen_stmt(CodeGen* this, Stmt* stmt) {
                 LLVMTypeRef ret_type = LLVMGetReturnType(LLVMGetElementType(LLVMTypeOf(func)));
                 if (ret_type == LLVMVoidTypeInContext(this->context)) {
                     LLVMBuildRetVoid(this->builder);
+                } else if (!strcmp(stmt->func_decl.tok_identifier.val, "main")) {
+                    LLVMValueRef zero = LLVMConstInt(LLVMInt32TypeInContext(this->context), 0, 0);
+                    LLVMBuildRet(this->builder, zero);
                 } else {
                     // error handling for non-void functions without return
                     fprintf(stderr, "Error: Non-void function '%s' missing return statement\n",

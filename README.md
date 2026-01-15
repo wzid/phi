@@ -37,7 +37,7 @@ Watch my devlogs on YouTube [here](https://www.youtube.com/watch?v=QPHYcFLAWoo&l
 - [x] Implement strings
 - [x] Implement "if statements"
 - [x] Implement "while loops"
-- [ ] Allow main function to exist without return statement
+- [x] Allow main function to exist without return statement
 - [ ] Add support for "else ifs"
 - [ ] Clean up tests by merging test code and seperating answers
 #### Maybe?
