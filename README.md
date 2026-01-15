@@ -36,7 +36,7 @@ Watch my devlogs on YouTube [here](https://www.youtube.com/watch?v=QPHYcFLAWoo&l
 - [x] Implement a print function
 - [x] Implement strings
 - [x] Implement "if statements"
-- [ ] Implement "for loops" and "while loops"
+- [ ] Implement "while loops"
 - [ ] Include a standard library (especially math)
 - [ ] Allow main function to exist without return statement
 #### Maybe?

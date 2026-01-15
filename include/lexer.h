@@ -42,6 +42,7 @@ typedef enum {
     tok_colon,
     tok_if,
     tok_else,
+    tok_while,
 } Token;
 
 typedef struct {

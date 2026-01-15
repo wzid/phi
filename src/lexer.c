@@ -224,6 +224,8 @@ static void handle_identifier(Lexer *lexer) {
         add_token(lexer, tok_if, identifier);
     } else if (!strcmp(identifier, "else")) {
         add_token(lexer, tok_else, identifier);
+    } else if (!strcmp(identifier, "while")) {
+        add_token(lexer, tok_while, identifier);
     } else {
         add_token(lexer, tok_identifier, identifier);
     }
@@ -288,6 +290,7 @@ char *token_to_string(Token token) {
         case tok_colon: return "TOK_COLON";
         case tok_if: return "TOK_IF";
         case tok_else: return "TOK_ELSE";
+        case tok_while: return "TOK_WHILE";
         default: return "TOK_UNKNOWN";
     }
 }
