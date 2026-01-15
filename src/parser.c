@@ -536,6 +536,8 @@ static Expr *parse_infix(Parser *this, Expr *left) {
         case tok_mod:
         case tok_lessthan:
         case tok_greaterthan:
+        case tok_lessthan_equal:
+        case tok_greaterthan_equal:
         case tok_equality:
         case tok_inequality: {
             TokenData op_token = next_token_data(this);
@@ -575,6 +577,8 @@ Precedence get_precedence(Token token) {
             return EQUALITY;
         case tok_lessthan:
         case tok_greaterthan:
+        case tok_lessthan_equal:
+        case tok_greaterthan_equal:
             return LESS_GREATER;
         case tok_plus:
         case tok_minus:

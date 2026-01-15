@@ -214,6 +214,10 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
                     return LLVMBuildICmp(this->builder, LLVMIntSLT, left, right, "lttmp");
                 case tok_greaterthan:
                     return LLVMBuildICmp(this->builder, LLVMIntSGT, left, right, "gttmp");
+                case tok_lessthan_equal:
+                    return LLVMBuildICmp(this->builder, LLVMIntSLE, left, right, "letmp");
+                case tok_greaterthan_equal:
+                    return LLVMBuildICmp(this->builder, LLVMIntSGE, left, right, "getmp");
                 default:
                     fprintf(stderr, "Unknown binary operator\n");
                     return NULL;
