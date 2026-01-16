@@ -49,26 +49,32 @@ Watch my devlogs on YouTube [here](https://www.youtube.com/watch?v=QPHYcFLAWoo&l
 ```
 func get_two(): int => 2;
 
-func add_five(a: int): int => a + 5;
-
-func main() {
-    int two = get_two();
-    return add_five(two); // should return 7
+func is_prime(n: int): int {
+    int i = 2;
+    
+    if (n < 2) {
+        return 0;
+    }
+    
+    while (i * i < n + 1) {
+        if (n % i == 0) {
+            return 0;
+        }
+        i++;
+    }
+    
+    return 1;
 }
-```
-
-### Hopeful Syntax
-```
-func get_name(): string => "phi";
-
-// it would be cool if I could remove the : int and just infer the return type
-func add_five(a: int): int => a + 5;
 
 func main() {
-    string name = get_name();
-    int result = add_five(5);
-    print(name);
-    print(result);
+    int i = 100000;
+    int count = 0;
+    while (i < 1000000) {
+        if (is_prime(i++)) {
+            count++;
+        }
+    }
+    printf("%d numbers are prime between 100,000 and 1,000,000\n", count);
 }
 ```
 
