@@ -38,7 +38,7 @@ Watch my devlogs on YouTube [here](https://www.youtube.com/watch?v=QPHYcFLAWoo&l
 - [x] Implement "if statements"
 - [x] Implement "while loops"
 - [x] Allow main function to exist without return statement
-- [ ] Add support for "else ifs"
+- [x] Add support for "else ifs"
 - [x] Clean up tests by merging test code and seperating answers
 #### Maybe?
 - [ ] Include a standard library (especially math)
