@@ -6,6 +6,10 @@
 
 #include "memory.h"
 
+// Helper: write a string with C-style escapes into a buffer (returns buffer pointer)
+static char* escape_c_string(const char* s);
+
+
 /**
  * Creates a binary expression node.
  * @param left The left operand expression.
@@ -261,12 +265,15 @@ Stmt* block_stmt(Stmt** statements, int stmt_count) {
  * @param else_branch The 'else' branch statement (should be a BlockStmt, can be NULL).
  * @return Pointer to the created Stmt node (of type IfStmt).
  */
-Stmt *if_stmt(Expr *condition, Stmt *then_branch, Stmt *else_branch) {
+Stmt *if_stmt(Expr *condition, Stmt *then_branch, int else_if_count, Expr **else_if_conditions, Stmt **else_if_branches, Stmt *else_branch) {
     Stmt* stmt = (Stmt*)s_malloc(sizeof(Stmt));
 
     stmt->type = STMT_IF;
     stmt->if_stmt.condition = condition;
     stmt->if_stmt.then_branch = then_branch;
+    stmt->if_stmt.else_if_count = else_if_count;
+    stmt->if_stmt.else_if_conditions = else_if_conditions;
+    stmt->if_stmt.else_if_branches = else_if_branches;
     stmt->if_stmt.else_branch = else_branch;
 
     return stmt;
@@ -336,9 +343,12 @@ char* expr_to_string(Expr* expr) {
         case EXPR_LITERAL_INT:
             snprintf(buffer, 512, "IntLiteral(%s)", expr->int_literal.value);
             return buffer;
-        case EXPR_LITERAL_STRING:
-            snprintf(buffer, 512, "StringLiteral(\"%s\")", expr->str_literal.value);
+        case EXPR_LITERAL_STRING: {
+            char* esc = escape_c_string(expr->str_literal.value);
+            snprintf(buffer, 512, "StringLiteral(\"%s\")", esc);
+            s_free(esc);
             return buffer;
+        }
         case EXPR_LITERAL_BOOL:
             snprintf(buffer, 512, "BoolLiteral(%s)", expr->bool_literal.value ? "true" : "false");
             return buffer;
@@ -444,11 +454,33 @@ char* stmt_to_string(Stmt* stmt) {
                 strcat(buffer, body_stmt_str);
                 s_free(body_stmt_str);
             }
-            
             s_free(condition_str);
+            
+            if (!stmt->if_stmt.else_branch && stmt->if_stmt.else_if_count == 0) {
+                return buffer;
+            }
+
+            if (stmt->if_stmt.else_if_count > 0) {
+                for (int i = 0; i < stmt->if_stmt.else_if_count; i++) {
+                    strcat(buffer, "\n  ElseIf(");
+                    char* else_if_cond_str = expr_to_string(stmt->if_stmt.else_if_conditions[i]);
+                    strcat(buffer, else_if_cond_str);
+                    strcat(buffer, ")");
+                    s_free(else_if_cond_str);
+                    Stmt* else_if_branch = stmt->if_stmt.else_if_branches[i];
+                    for (int j = 0; j < else_if_branch->block_stmt.stmt_count; j++) {
+                        char* body_stmt_str = stmt_to_string(else_if_branch->block_stmt.statements[j]);
+                        strcat(buffer, "\n    ");
+                        strcat(buffer, body_stmt_str);
+                        s_free(body_stmt_str);
+                    }
+                }
+            }
+
             if (!stmt->if_stmt.else_branch) {
                 return buffer;
             }
+
 
             strcat(buffer, "\n  Else");
             Stmt* else_branch = stmt->if_stmt.else_branch;
@@ -507,4 +539,30 @@ void free_program(Program* prog) {
     }
     s_free(prog->statements);
     s_free(prog);
+}
+
+// Helper: write a string with C-style escapes into a buffer (returns buffer pointer)
+static char* escape_c_string(const char* s) {
+    // Allocate a buffer large enough for worst case (every char is escaped)
+    size_t len = strlen(s);
+    char* buf = s_malloc(len * 4 + 1); // plenty of space
+    char* p = buf;
+    for (; *s; ++s) {
+        switch (*s) {
+            case '\n': *p++ = '\\'; *p++ = 'n'; break;
+            case '\t': *p++ = '\\'; *p++ = 't'; break;
+            case '\r': *p++ = '\\'; *p++ = 'r'; break;
+            case '\\': *p++ = '\\'; *p++ = '\\'; break;
+            case '"': *p++ = '\\'; *p++ = '"'; break;
+            default:
+                if ((unsigned char)*s < 32 || (unsigned char)*s == 127) {
+                    sprintf(p, "\\x%02x", (unsigned char)*s);
+                    p += 4;
+                } else {
+                    *p++ = *s;
+                }
+        }
+    }
+    *p = '\0';
+    return buf;
 }

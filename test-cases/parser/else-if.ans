@@ -1,0 +1,10 @@
+FuncDeclStmt(main)
+  VarDeclStmt(int i = IntLiteral(9))
+  IfStmt(BinaryExpr(IdentifierExpr(i) == IntLiteral(4)))
+    ExprStmt(FuncCallExpr(printf(StringLiteral("4\n"))))
+  ElseIf(BinaryExpr(IdentifierExpr(i) == IntLiteral(2)))
+    ExprStmt(FuncCallExpr(printf(StringLiteral("2\n"))))
+  ElseIf(BinaryExpr(IdentifierExpr(i) == IntLiteral(1)))
+    ExprStmt(FuncCallExpr(printf(StringLiteral("1\n"))))
+  Else
+    ExprStmt(FuncCallExpr(printf(StringLiteral("no\n"))))

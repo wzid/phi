@@ -16,12 +16,12 @@ func is_prime(n: int): int {
 }
 
 func main() {
-    int i = 100000;
+    int i = 1000;
     int count = 0;
-    while (i < 1000000) {
+    while (i < 100000) {
         if (is_prime(i++)) {
             count++;
         }
     }
-    printf("%d numbers are prime between 100,000 and 1,000,000\n", count);
+    printf("%d numbers are prime between 1000 and 100,000\n", count);
 }
