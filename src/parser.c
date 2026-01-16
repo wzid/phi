@@ -389,6 +389,9 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
                     // postfix operator
                     // x++ or x--
                     stmt = expression_stmt(parse_increment_expr(this, false));
+                    expect_next_and_consume_current(this, tok_semi); // consume postfix operator
+                    consume(this); // consume semicolon
+
                 } else {
                     stmt = parse_var_assign(this);
                 }
@@ -404,6 +407,8 @@ static Stmt **parse_block_statements(Parser *this, int *out_stmt_count) {
             case tok_decrement:
             // --x or ++x
                 stmt = expression_stmt(parse_increment_expr(this, true));
+                expect_next_and_consume_current(this, tok_semi); // consume identifier
+                consume(this); // consume semicolon
                 break;
             default:
                 stmt = parse_expression_stmt(this);

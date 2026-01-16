@@ -1,4 +1,6 @@
 func main() {
     int x = 0;
-    return x++;
+    x++;
+    ++x;
+    return x;
 }

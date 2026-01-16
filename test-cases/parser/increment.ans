@@ -1,3 +1,5 @@
 FuncDeclStmt(main)
   VarDeclStmt(int x = IntLiteral(0))
-  ReturnStmt(IncrementExpr(x++))
+  ExprStmt(IncrementExpr(x++))
+  ExprStmt(IncrementExpr(++x))
+  ReturnStmt(IdentifierExpr(x))
