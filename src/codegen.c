@@ -542,14 +542,13 @@ int codegen_stmt(CodeGen* this, Stmt* stmt) {
             }
             break;
         }
+
         case STMT_IF: {
-            // Generate code for the condition expression
+            // Evaluate the main condition
+            LLVMValueRef func = LLVMGetBasicBlockParent(LLVMGetInsertBlock(this->builder));
             Expr* cond_expr = stmt->if_stmt.condition;
             LLVMValueRef cond_val = codegen_expr(this, cond_expr);
-            if (!cond_val) {
-                fprintf(stderr, "Failed to generate code for if condition.\n");
-                return 0;
-            }
+            if (!cond_val) return 0;
 
             // Convert condition to bool (i1) if needed
             LLVMTypeRef cond_type = LLVMTypeOf(cond_val);
@@ -557,53 +556,81 @@ int codegen_stmt(CodeGen* this, Stmt* stmt) {
                 cond_val = LLVMBuildICmp(this->builder, LLVMIntNE, cond_val, LLVMConstInt(cond_type, 0, 0), "ifcond");
             }
 
-            // Get the current function
-            LLVMValueRef func = LLVMGetBasicBlockParent(LLVMGetInsertBlock(this->builder));
-
-            // Create blocks for then, else, and merge
+            // Prepare blocks
+            int n_elseif = stmt->if_stmt.else_if_count;
+            LLVMBasicBlockRef* elseif_blocks = NULL;
+            LLVMBasicBlockRef* elseif_body_blocks = NULL;
+            if (n_elseif > 0) {
+                elseif_blocks = s_malloc(sizeof(LLVMBasicBlockRef) * n_elseif);
+                elseif_body_blocks = s_malloc(sizeof(LLVMBasicBlockRef) * n_elseif);
+            }
             LLVMBasicBlockRef then_bb = LLVMAppendBasicBlockInContext(this->context, func, "then");
             LLVMBasicBlockRef else_bb = NULL;
-            LLVMBasicBlockRef merge_bb = LLVMAppendBasicBlockInContext(this->context, func, "ifcont");
+            LLVMBasicBlockRef after_bb = LLVMAppendBasicBlockInContext(this->context, func, "ifend");
 
-            int has_else = (stmt->if_stmt.else_branch != NULL);
-            if (has_else) {
+            // Create else-if and else blocks if needed
+            for (int i = 0; i < n_elseif; ++i) {
+                elseif_blocks[i] = LLVMAppendBasicBlockInContext(this->context, func, "elseif");
+                elseif_body_blocks[i] = LLVMAppendBasicBlockInContext(this->context, func, "elseif_body");
+            }
+            if (stmt->if_stmt.else_branch) {
                 else_bb = LLVMAppendBasicBlockInContext(this->context, func, "else");
             } else {
-                else_bb = merge_bb;
+                else_bb = after_bb;
             }
 
-            // Build the conditional branch
-            LLVMBuildCondBr(this->builder, cond_val, then_bb, else_bb);
+            // Branch on main condition
+            if (n_elseif > 0) {
+                LLVMBuildCondBr(this->builder, cond_val, then_bb, elseif_blocks[0]);
+            } else {
+                LLVMBuildCondBr(this->builder, cond_val, then_bb, else_bb);
+            }
 
-            // Emit then block (with scope)
+            // Emit then block
+
             LLVMPositionBuilderAtEnd(this->builder, then_bb);
-            int saved_var_count_then = this->var_count;
-            int then_has_return = codegen_stmt(this, stmt->if_stmt.then_branch);
-            // Pop variables declared in then block
-            for (int i = saved_var_count_then; i < this->var_count; ++i) {
-                if (this->var_names && this->var_names[i]) s_free(this->var_names[i]);
-            }
-            this->var_count = saved_var_count_then;
-            if (!then_has_return) {
-                LLVMBuildBr(this->builder, merge_bb);
+            codegen_stmt(this, stmt->if_stmt.then_branch);
+            if (!LLVMGetBasicBlockTerminator(then_bb)) {
+                LLVMBuildBr(this->builder, after_bb);
             }
 
-            // Emit else block if present (with scope)
-            if (has_else) {
+            // Emit else-if blocks
+
+            for (int i = 0; i < n_elseif; ++i) {
+                LLVMPositionBuilderAtEnd(this->builder, elseif_blocks[i]);
+                LLVMValueRef elseif_cond = codegen_expr(this, stmt->if_stmt.else_if_conditions[i]);
+                LLVMTypeRef elseif_type = LLVMTypeOf(elseif_cond);
+                if (LLVMGetTypeKind(elseif_type) != LLVMIntegerTypeKind || LLVMGetIntTypeWidth(elseif_type) != 1) {
+                    elseif_cond = LLVMBuildICmp(this->builder, LLVMIntNE, elseif_cond, LLVMConstInt(elseif_type, 0, 0), "elseifcond");
+                }
+                if (i < n_elseif - 1) {
+                    LLVMBuildCondBr(this->builder, elseif_cond, elseif_body_blocks[i], elseif_blocks[i+1]);
+                } else {
+                    LLVMBuildCondBr(this->builder, elseif_cond, elseif_body_blocks[i], else_bb);
+                }
+                // Emit elseif body
+                LLVMPositionBuilderAtEnd(this->builder, elseif_body_blocks[i]);
+                codegen_stmt(this, stmt->if_stmt.else_if_branches[i]);
+                if (!LLVMGetBasicBlockTerminator(elseif_body_blocks[i])) {
+                    LLVMBuildBr(this->builder, after_bb);
+                }
+            }
+
+            // Emit else block if present
+
+            if (stmt->if_stmt.else_branch) {
                 LLVMPositionBuilderAtEnd(this->builder, else_bb);
-                int saved_var_count_else = this->var_count;
-                int else_has_return = codegen_stmt(this, stmt->if_stmt.else_branch);
-                for (int i = saved_var_count_else; i < this->var_count; ++i) {
-                    if (this->var_names && this->var_names[i]) s_free(this->var_names[i]);
-                }
-                this->var_count = saved_var_count_else;
-                if (!else_has_return) {
-                    LLVMBuildBr(this->builder, merge_bb);
+                codegen_stmt(this, stmt->if_stmt.else_branch);
+                if (!LLVMGetBasicBlockTerminator(else_bb)) {
+                    LLVMBuildBr(this->builder, after_bb);
                 }
             }
 
-            // Continue at merge block
-            LLVMPositionBuilderAtEnd(this->builder, merge_bb);
+            // Continue after if
+            LLVMPositionBuilderAtEnd(this->builder, after_bb);
+
+            if (elseif_blocks) s_free(elseif_blocks);
+            if (elseif_body_blocks) s_free(elseif_body_blocks);
             return 0;
         }
         case STMT_WHILE: {

@@ -7,8 +7,8 @@ typedef enum {
     tok_eof,
     tok_lparen,
     tok_rparen,
-    tok_lbrace,
-    tok_rbrace,
+    tok_lbrace, // {
+    tok_rbrace, // }
     tok_comma,
     tok_plus,
     tok_increment, // ++
