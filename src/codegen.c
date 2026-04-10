@@ -293,7 +293,8 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
             // Check if it's a standard library function
             for (int i = 0; stdlib_functions[i] != NULL; i++) {
                 if (strcmp(expr->func_call.tok_function.val, stdlib_functions[i]) == 0) {
-                    return handle_stdlib_call(this, expr->func_call.tok_function.val, expr->func_call.args);
+                    return handle_stdlib_call(this, expr->func_call.tok_function.val,
+                                              expr->func_call.args, expr->func_call.arg_count);
                 }
             }
 
@@ -318,7 +319,10 @@ LLVMValueRef codegen_expr(CodeGen* this, Expr* expr) {
             LLVMTypeRef func_type = LLVMGlobalGetValueType(callee);
             
             // Build the call instruction
-            LLVMValueRef call = LLVMBuildCall2(this->builder, func_type, callee, args, expr->func_call.arg_count, "calltmp");
+            // Don't name the result for void-returning functions
+            LLVMTypeRef return_type = LLVMGetReturnType(func_type);
+            const char* result_name = (return_type == LLVMVoidTypeInContext(this->context)) ? "" : "calltmp";
+            LLVMValueRef call = LLVMBuildCall2(this->builder, func_type, callee, args, expr->func_call.arg_count, result_name);
             s_free(args);
             return call;
         }
@@ -377,7 +381,7 @@ int codegen_stmt(CodeGen* this, Stmt* stmt) {
 
             if (!has_return) {
                 // If no return statement was generated, add a default return 0
-                LLVMTypeRef ret_type = LLVMGetReturnType(LLVMGetElementType(LLVMTypeOf(func)));
+                LLVMTypeRef ret_type = LLVMGetReturnType(LLVMGlobalGetValueType(func));
                 if (ret_type == LLVMVoidTypeInContext(this->context)) {
                     LLVMBuildRetVoid(this->builder);
                 } else if (!strcmp(stmt->func_decl.tok_identifier.val, "main")) {
@@ -724,9 +728,9 @@ void setup_stdlib(CodeGen* this) {
     // setup_pow(this);
 }
 
-LLVMValueRef handle_stdlib_call(CodeGen* this, const char* func_name, Expr** args) {
+LLVMValueRef handle_stdlib_call(CodeGen* this, const char* func_name, Expr** args, int arg_count) {
     if (strcmp(func_name, "printf") == 0) {
-        return call_printf(this, args);
+        return call_printf(this, args, arg_count);
     }/* else if (strcmp(func_name, "pow") == 0) {
         return call_pow(this, args);
     }*/
