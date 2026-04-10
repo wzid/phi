@@ -1,5 +1,6 @@
 #include "std_lib.h"
 
+#include <stdio.h>
 #include "memory.h"
 
 void setup_printf(CodeGen* this) {
@@ -12,9 +13,8 @@ void setup_printf(CodeGen* this) {
     LLVMSetLinkage(printf_func, LLVMExternalLinkage);
 }
 
-LLVMValueRef call_printf(CodeGen* this, Expr **args) {
-    int argc = 0;
-    while (args[argc] != NULL) argc++;
+LLVMValueRef call_printf(CodeGen* this, Expr **args, int arg_count) {
+    int argc = arg_count;
 
     // Allocate array for LLVMValueRef arguments
     LLVMValueRef *llvm_args = s_malloc(sizeof(LLVMValueRef) * argc);
@@ -23,7 +23,14 @@ LLVMValueRef call_printf(CodeGen* this, Expr **args) {
     }
 
     LLVMValueRef printf_func = LLVMGetNamedFunction(this->module, "printf");
-    LLVMValueRef result = LLVMBuildCall2(this->builder, LLVMGlobalGetValueType(printf_func), printf_func, llvm_args, argc, "");
+    if (!printf_func) {
+        fprintf(stderr, "printf not declared in module\n");
+        s_free(llvm_args);
+        return NULL;
+    }
+    LLVMTypeRef printf_type = LLVMGlobalGetValueType(printf_func);
+    LLVMValueRef result = LLVMBuildCall2(this->builder, printf_type, printf_func, llvm_args, argc, "");
+    s_free(llvm_args);
     return result;
 }
 

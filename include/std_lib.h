@@ -10,7 +10,7 @@ static const char* stdlib_functions[] = {
 };
 
 void setup_printf(CodeGen* this);
-LLVMValueRef call_printf(CodeGen* this, Expr **args);
+LLVMValueRef call_printf(CodeGen* this, Expr **args, int arg_count);
 
 /*
 void setup_pow(CodeGen* this);

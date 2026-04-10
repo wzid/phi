@@ -32,7 +32,7 @@ void dump_ir(CodeGen *this);
 void write_ir(CodeGen *this, const char *filename);
 int run_jit(CodeGen *this);
 void setup_stdlib(CodeGen *this);
-LLVMValueRef handle_stdlib_call(CodeGen *this, const char *func_name, Expr **args);
+LLVMValueRef handle_stdlib_call(CodeGen *this, const char *func_name, Expr **args, int arg_count);
 LLVMTypeRef get_type(TokenData type, LLVMContextRef context);
 
 #endif
